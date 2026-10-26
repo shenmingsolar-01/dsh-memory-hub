@@ -46,6 +46,13 @@ export function apply(ctx, config = {}) {
   };
   const paymentsFile = file.replace(/\.json$/i, '') + '-payments.json';
   const paymentLimit = Math.max(10, Math.min(1000, Number(payRaw.historyLimit || 200)));
+  const privacy = {
+    telemetry: false,
+    collectsData: false,
+    consentRequired: true,
+    consent: config.consent === true,
+    localOnly: true,
+  };
   const outboxFile = file.replace(/\.json$/i, '') + '-outbox.json';
   const outboxRaw = Number(config.outboxLimit ?? 200);
   const outboxLimit = Number.isFinite(outboxRaw) && outboxRaw > 0 ? Math.min(5000, outboxRaw) : 0;
@@ -270,6 +277,15 @@ export function apply(ctx, config = {}) {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, { ok: true, name, version: 1, file, port });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/privacy') {
+      json(res, 200, {
+        ok: true,
+        ...privacy,
+        note: 'No telemetry, no outbound collection. Data stays on this machine. Any future collection requires explicit consent from the installer and the user.',
+      });
       return;
     }
 

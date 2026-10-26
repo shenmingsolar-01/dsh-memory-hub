@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
-import { scanProviders, PROVIDERS } from './providers.mjs';
+import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -485,10 +485,13 @@ export function apply(ctx, config = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/models') {
-      const catalog = await refreshCatalog(false);
+      const allowNetwork = Boolean(binding) || config.networkWithModel === false;
+      const catalog = allowNetwork ? await refreshCatalog(false) : { ok: false, skipped: 'model-not-bound' };
       const detected = await detectModels();
-      const providers = await scanProviders();
-      json(res, 200, { ok: true, configured: configuredModels, detected, providers, catalog });
+      const providers = allowNetwork
+        ? await scanProviders()
+        : await Promise.all(PROVIDERS.filter((p) => p.local).map((p) => probeProvider(p)));
+      json(res, 200, { ok: true, configured: configuredModels, detected, providers, catalog, network: allowNetwork ? 'model-bound' : 'local-only' });
       return;
     }
 
@@ -516,7 +519,8 @@ export function apply(ctx, config = {}) {
       json(res, 200, {
         ok: true,
         ...privacy,
-        note: 'No telemetry, no outbound collection. Data stays on this machine. Any future collection requires explicit consent from the installer and the user.',
+        network: binding ? 'model-bound' : 'local-only',
+        note: 'No telemetry, no outbound collection. Cloud lookups only after a model is bound; data stays on this machine.',
       });
       return;
     }
@@ -704,6 +708,7 @@ export function apply(ctx, config = {}) {
       presets: payment.presets,
     },
     models: configuredModels,
+    binding,
   });
 
   const toolsEnabled = config.tools !== false;
@@ -880,6 +885,14 @@ export function apply(ctx, config = {}) {
           for (const m of parsed.models) {
             configuredModels = configuredModels.filter((x) => x.name !== m.name && x.baseUrl !== m.baseUrl);
             configuredModels.push({ name: m.name, baseUrl: m.baseUrl, apiKeyEnv: '', protocol: 'openai' });
+          }
+          for (const a of parsed.apis) {
+            const name = a.name || a.baseUrl;
+            configuredModels = configuredModels.filter((x) => x.name !== name && x.baseUrl !== a.baseUrl);
+            configuredModels.push({ name, baseUrl: a.baseUrl, apiKeyEnv: a.apiKeyEnv || '', protocol: 'openai' });
+            if (parsed.bind) {
+              binding = { providerId: 'custom', name, baseUrl: a.baseUrl, protocol: 'openai', apiKeyEnv: a.apiKeyEnv || '', model: a.model || '', boundAt: Date.now() };
+            }
           }
           persistCurrentSettings();
           return { content: [{ type: 'text', text: JSON.stringify({ ok: true, applied: parsed.applied, defaultCharacter, defaultSource }) }] };

@@ -1,32 +1,35 @@
 {
-  "summary": {
-    "en": "Local memory hub for multi-channel DSH characters: per-source memory with snapshots and restore, inbox/outbox with per-client targets, offline merge, and optional payment intents.",
-    "zh": "多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。"
-  },
-  "items": {
-    "zh": [
-      "按 character（角色）和 source（来源，如 qq / pc / mobile）分开存记忆",
-      "每个来源独立，删除一个来源不影响其他来源",
-      "每次写入前自动快照，默认保留 100 份",
-      "支持删除指定来源的一条记录，或恢复到最近/指定快照",
-      "Inbox 收件箱，支持 target 分端投递，离线时先存本地、上线再取",
-      "Outbox 发件箱，把消息投递到安装者自己配置的本机通道",
-      "/cross 一次写入并投递到指定通道",
-      "/memory/flush 把离线来源并回正常来源，自动去重并清空离线来源",
-      "可选 payment 配置：校验金额档位、生成本地支付意图和带金额的支付地址，不处理支付凭证",
-      "默认只监听 127.0.0.1，数据落在本机 ~/.dsh/memory-hub.json"
-    ],
-    "en": [
-      "Per-character and per-source memory (qq / pc / mobile)",
-      "Sources are isolated: deleting one never touches another",
-      "Automatic snapshot before each write, 100 kept by default",
-      "Delete one record or restore the latest/named snapshot",
-      "Inbox with per-client targets: offline messages wait locally",
-      "Outbox delivery to installer-configured local channels",
-      "/cross writes an inbox item and delivers it in one call",
-      "/memory/flush merges an offline source back with dedupe",
-      "Optional payment config: amount presets, local payment intents, checkout URL; no payment credentials",
-      "Listens on 127.0.0.1 by default; data stays in ~/.dsh/memory-hub.json"
-    ]
-  }
+    "summary":  {
+                    "en":  "Local memory hub for multi-channel DSH characters: per-source memory with snapshots and restore, inbox/outbox with per-client targets, offline merge, and optional payment intents.",
+                    "zh":  "多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。"
+                },
+    "items":  {
+                  "zh":  [
+                             "按 character（角色）和 source（来源，如 qq / pc / mobile）分开存记忆",
+                             "每个来源独立，删除一个来源不影响其他来源",
+                             "每次写入前自动快照，默认保留 100 份",
+                             "支持删除指定来源的一条记录，或恢复到最近/指定快照",
+                             "Inbox 收件箱，支持 target 分端投递，离线时先存本地、上线再取",
+                             "Outbox 发件箱，把消息投递到安装者自己配置的本机通道",
+                             "/cross 一次写入并投递到指定通道",
+                             "/memory/flush 把离线来源并回正常来源，自动去重并清空离线来源",
+                             "可选 payment 配置：校验金额档位、生成本地支付意图和带金额的支付地址，不处理支付凭证",
+                             "默认只监听 127.0.0.1，数据落在本机 ~/.dsh/memory-hub.json",
+                             "模型工具：安装者自己的模型可调用 memory_hub_* 自动读写本机记忆"
+                         ],
+                  "en":  [
+                             "Per-character and per-source memory (qq / pc / mobile)",
+                             "Sources are isolated: deleting one never touches another",
+                             "Automatic snapshot before each write, 100 kept by default",
+                             "Delete one record or restore the latest/named snapshot",
+                             "Inbox with per-client targets: offline messages wait locally",
+                             "Outbox delivery to installer-configured local channels",
+                             "/cross writes an inbox item and delivers it in one call",
+                             "/memory/flush merges an offline source back with dedupe",
+                             "Optional payment config: amount presets, local payment intents, checkout URL; no payment credentials",
+                             "Listens on 127.0.0.1 by default; data stays in ~/.dsh/memory-hub.json",
+                             "Model tools: the installer\u0027s own model can call memory_hub_* to read/write local memory"
+                         ]
+              },
+    "repoDescription":  "多端 DSH 角色的本机记忆中枢：来源隔离、快照恢复、分端收件箱/发件箱、离线并回、可选支付意图。Local memory hub for multi-channel DSH characters."
 }

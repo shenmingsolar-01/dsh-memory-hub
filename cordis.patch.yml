@@ -49,3 +49,5 @@
         # Public catalog; refreshed at most once per day. Set "" to disable.
         catalogUrl: https://fastly.jsdelivr.net/gh/shenmingsolar-01/dsh-memory-hub@main/providers-catalog.json
         catalogTtlMs: 86400000
+        # Cloud lookups only after a model is bound. Set false to allow earlier.
+        networkWithModel: true

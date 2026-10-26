@@ -16,7 +16,8 @@
                              "可选 payment 配置：校验金额档位、生成本地支付意图和带金额的支付地址，不处理支付凭证",
                              "默认只监听 127.0.0.1，数据落在本机 ~/.dsh/memory-hub.json",
                              "模型工具：安装者自己的模型可调用 memory_hub_* 自动读写本机记忆",
-                             "安装即用：默认注册 memory_hub_* 工具，停用后不启动服务、不注册工具、不影响模型"
+                             "安装即用：默认注册 memory_hub_* 工具，停用后不启动服务、不注册工具、不影响模型",
+                             "端数不设限：角色/来源支持任意 Unicode，客户端数量与容量由安装者本机决定，上限可设 0 表示不限"
                          ],
                   "en":  [
                              "Per-character and per-source memory (qq / pc / mobile)",
@@ -30,7 +31,8 @@
                              "Optional payment config: amount presets, local payment intents, checkout URL; no payment credentials",
                              "Listens on 127.0.0.1 by default; data stays in ~/.dsh/memory-hub.json",
                              "Model tools: the installer\u0027s own model can call memory_hub_* to read/write local memory",
-                             "Ready after install: memory_hub_* tools register by default; disabling stops the server and tools without affecting the model"
+                             "Ready after install: memory_hub_* tools register by default; disabling stops the server and tools without affecting the model",
+                             "No fixed endpoint cap: Unicode character/source names, any number of local clients, configurable limits with 0 meaning unlimited"
                          ]
               },
     "repoDescription":  "多端 DSH 角色的本机记忆中枢：来源隔离、快照恢复、分端收件箱/发件箱、离线并回、可选支付意图。Local memory hub for multi-channel DSH characters."

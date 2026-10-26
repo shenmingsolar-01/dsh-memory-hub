@@ -19,7 +19,7 @@
         # Example (fill in your own local endpoint):
         # channels:
         #   qq:
-        #     url: http://127.0.0.1:3100/act
+        #     url: https://channel.example.invalid/hook
         #     body:
         #       who: your-character
         #       action: message

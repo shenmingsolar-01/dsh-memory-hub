@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
-import { scanProviders } from './providers.mjs';
+import { scanProviders, PROVIDERS } from './providers.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -205,6 +205,47 @@ export function apply(ctx, config = {}) {
   const modelPorts = Array.isArray(config.discoverPorts) && config.discoverPorts.length
     ? config.discoverPorts.map((n) => Number(n)).filter((n) => n > 0)
     : [11434, 1234, 8000, 8080, 5000];
+  const catalogUrl = String(config.catalogUrl || 'https://raw.githubusercontent.com/shenmingsolar-01/dsh-memory-hub/main/providers-catalog.json');
+  const catalogCacheFile = path.join(dshHome, 'memory-hub-providers.json');
+  const catalogTtlMs = Number(config.catalogTtlMs || 24 * 3600 * 1000);
+
+  const mergeCatalog = (providers) => {
+    for (const p of Array.isArray(providers) ? providers : []) {
+      if (!p || !p.id || !p.baseUrl) continue;
+      const idx = PROVIDERS.findIndex((x) => x.id === p.id);
+      const item = {
+        id: String(p.id),
+        name: String(p.name || p.id),
+        protocol: String(p.protocol || 'openai'),
+        baseUrl: String(p.baseUrl),
+        apiKeyEnv: String(p.apiKeyEnv || ''),
+        models: Array.isArray(p.models) ? p.models.map(String) : [],
+        local: p.local === true,
+      };
+      if (idx >= 0) PROVIDERS[idx] = item;
+      else PROVIDERS.push(item);
+    }
+  };
+
+  const refreshCatalog = async (force = false) => {
+    let cache = null;
+    try { cache = JSON.parse(fs.readFileSync(catalogCacheFile, 'utf8')); } catch { /* none */ }
+    if (cache?.providers) mergeCatalog(cache.providers);
+    if (!force && cache && Date.now() - Number(cache.at || 0) < catalogTtlMs) {
+      return { ok: true, cached: true, count: PROVIDERS.length };
+    }
+    if (!catalogUrl) return { ok: false, error: 'no catalogUrl' };
+    try {
+      const r = await fetch(catalogUrl, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      mergeCatalog(j.providers);
+      fs.writeFileSync(catalogCacheFile, JSON.stringify({ at: Date.now(), providers: j.providers || [] }, null, 2), 'utf8');
+      return { ok: true, cached: false, count: PROVIDERS.length, updatedAt: j.updatedAt || '' };
+    } catch (err) {
+      return { ok: false, error: String(err?.message ?? err), count: PROVIDERS.length };
+    }
+  };
 
   const probeModel = async (baseUrl, apiKeyEnv = '') => {
     const base = String(baseUrl || '').replace(/\/+$/, '');
@@ -337,9 +378,16 @@ export function apply(ctx, config = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/models') {
+      const catalog = await refreshCatalog(false);
       const detected = await detectModels();
       const providers = await scanProviders();
-      json(res, 200, { ok: true, configured: configuredModels, detected, providers });
+      json(res, 200, { ok: true, configured: configuredModels, detected, providers, catalog });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/models/refresh') {
+      const catalog = await refreshCatalog(true);
+      json(res, catalog.ok ? 200 : 502, catalog);
       return;
     }
 
@@ -659,6 +707,16 @@ export function apply(ctx, config = {}) {
         execute: async (args = {}) => {
           const added = flushSource(args.character || defaultCharacter, args.from || 'offline', args.to || defaultSource);
           return { content: [{ type: 'text', text: JSON.stringify({ ok: true, added }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_refresh_catalog',
+        description: '刷新 AI 厂商和模型目录，获取插件发布后新增的软件和模型支持。',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+        execute: async () => {
+          const result = await refreshCatalog(true);
+          return { content: [{ type: 'text', text: JSON.stringify(result) }] };
         },
       });
 

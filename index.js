@@ -106,8 +106,17 @@ export function apply(ctx, config = {}) {
   const deliver = async (channelName, payload) => {
     const cfg = channels[channelName];
     if (!cfg || !cfg.url) return { ok: false, error: `unknown channel: ${channelName}` };
-    const vars = { text: payload.text, character: payload.character || '', channel: channelName };
-    const body = render(cfg.body !== undefined ? cfg.body : { text: '{{text}}', character: '{{character}}' }, vars);
+    const vars = { text: payload.text, character: payload.character || '', channel: channelName, locale: payload.locale || '' };
+    const type = String(cfg.type || 'generic').toLowerCase();
+    let body;
+    if (type === 'slack') body = { text: payload.text };
+    else if (type === 'discord') body = { content: payload.text };
+    else if (type === 'telegram') body = { chat_id: cfg.chatId || cfg.to || '', text: payload.text };
+    else if (type === 'feishu' || type === 'lark') body = { msg_type: 'text', content: { text: payload.text } };
+    else if (type === 'wecom' || type === 'wechat-work') body = { msgtype: 'text', text: { content: payload.text } };
+    else if (type === 'line') body = { to: cfg.to || '', messages: [{ type: 'text', text: payload.text }] };
+    else if (type === 'matrix') body = { msgtype: 'm.text', body: payload.text };
+    else body = render(cfg.body !== undefined ? cfg.body : { text: '{{text}}', character: '{{character}}' }, vars);
     try {
       const r = await fetch(String(cfg.url), {
         method: String(cfg.method || 'POST').toUpperCase(),
@@ -116,9 +125,9 @@ export function apply(ctx, config = {}) {
         signal: AbortSignal.timeout(Number(cfg.timeoutMs || 10000)),
       });
       const text = await r.text();
-      return { ok: r.ok, status: r.status, response: text.slice(0, 500) };
+      return { ok: r.ok, status: r.status, type, response: text.slice(0, 500) };
     } catch (err) {
-      return { ok: false, error: String(err?.message ?? err) };
+      return { ok: false, error: String(err?.message ?? err), type };
     }
   };
 
@@ -607,6 +616,20 @@ export function apply(ctx, config = {}) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/channels') {
+      json(res, 200, {
+        ok: true,
+        adapters: ['generic', 'slack', 'discord', 'telegram', 'feishu', 'wecom', 'line', 'matrix'],
+        channels: Object.entries(channels).map(([name, cfg]) => ({
+          name,
+          type: String(cfg.type || 'generic'),
+          url: String(cfg.url || '').replace(/\/\/[^/]+/, '//***'),
+        })),
+        locale,
+      });
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/outbox') {
       json(res, 200, { ok: true, items: loadOutbox().slice(-50) });
       return;
@@ -696,7 +719,7 @@ export function apply(ctx, config = {}) {
         const channel = String(data.channel || data.to || '').trim();
         const text = String(data.text || '').trim().slice(0, 4000);
         if (!channel || !text) { json(res, 400, { ok: false, error: 'channel and text are required' }); return; }
-        const result = await deliver(channel, { text, character: String(data.character || '') });
+        const result = await deliver(channel, { text, character: String(data.character || ''), locale });
         const items = loadOutbox();
         items.push({ at: Date.now(), channel, character: String(data.character || ''), text, ok: result.ok, status: result.status || 0, error: result.error || '' });
         saveOutbox(items);

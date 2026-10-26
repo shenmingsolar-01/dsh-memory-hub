@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`be-0.2.10`
+版本：`be-0.2.11`
 
 一个通用的**本机记忆中枢**插件：给多端角色（QQ、桌面、手机网页等）提供同一份可读写、可回退的记忆存储。
 
@@ -220,6 +220,43 @@ POST /memory/flush
 ```
 
 **默认 `flush: []`，不会自动处理任何来源，也不含作者数据。**
+## 支付配置（可选）
+
+插件只保存支付入口配置，不处理支付凭证。
+
+```yaml
+- id: memory-hub
+  config:
+    payment:
+      enabled: true
+      provider: alipay
+      checkoutUrl: https://your-provider.example/top_up
+      currency: CNY
+      presets: [10, 20, 50, 100, 300, 500]
+```
+
+默认 `enabled: false`、`checkoutUrl: ''`，不含任何商户号或账号。
+
+### 读取配置
+
+```http
+GET /payment
+```
+
+### 创建支付意图
+
+```http
+POST /payment/intent
+{ "amount": 50, "target": "mobile" }
+```
+
+返回金额、币种、支付方式和带金额参数的支付地址；只记录本地意图，不发起扣款。
+
+### 查看意图
+
+```http
+GET /payment/intents
+```
 ## 数据格式
 
 ```json

@@ -1,27 +1,27 @@
 {
   "summary": {
-    "en": "Local memory hub for multi-channel DSH characters: isolated per-source memory with snapshots and restore, Inbox/Outbox with per-client targets and offline merge, model-callable memory tools, optional payment intents, all local-only.",
-    "zh": "多端 DSH 角色的本机记忆中枢：按来源隔离记忆与快照恢复，支持分端收件箱/发件箱与离线并回、模型可直接调用的记忆工具、可选支付意图，全部只在本机运行。"
+    "en": "A local memory hub for multi-channel AI characters: separate memories per character and client, automatic backups and restore, message inbox/outbox with offline queueing, model-callable memory tools, optional payment entry. Everything stays on the installer's machine.",
+    "zh": "多端 AI 角色的本机记忆中枢：按角色和客户端分开记，写入前自动备份、删错能恢复；支持和各端收发消息、离线暂存；模型可直接读写记忆；可选支付入口。所有数据只留在安装者自己的电脑上。"
   },
-  "repoDescription": "多端 DSH 角色的本机记忆中枢：来源隔离、快照恢复、分端收发件箱、离线并回、模型接入、可选支付意图。Local memory hub for multi-channel DSH characters.",
+  "repoDescription": "多端 AI 角色的本机记忆中枢：分开记、能备份恢复、可分端收发、模型可读写、可选支付入口。Local memory hub for multi-channel AI characters.",
   "items": {
     "zh": [
-      "按角色和来源隔离记忆，来源之间互不影响；写入前自动快照，可删除单条或恢复到最近/指定快照",
-      "分端 Inbox/Outbox：按 target 投递，离线消息先存本地、上线再取；/cross 一次写入并投递；/memory/flush 把离线来源并回正常来源并去重",
-      "模型接入：memory_hub_* 工具供安装者模型读写本机记忆；自动探测 Ollama/LM Studio/vLLM 等兼容服务；也可直接对话让 memory_hub_configure 按原话配置角色、来源、模型和支付，同键覆盖，无设置按键",
-      "可选 payment 配置：金额档位、本地支付意图、带金额的支付地址，不处理支付凭证",
-      "默认只监听 127.0.0.1，数据落在安装者自己的 DSH_HOME；端数、角色数、来源数不设固定上限，容量上限可配 0 表示不限",
-      "默认无遥测、不主动联网、不收集安装者或用户数据；任何收集需显式同意",
-      "支持 enabled: false 或 disabled: true 停用，停用后不启动服务、不注册工具、不影响安装者模型"
+      "记忆：按角色和客户端分开存，互不覆盖；写入前自动备份，删错一条也能恢复。",
+      "收发：电脑、手机、QQ 等端之间可以按端发消息；对方离线时先存本地，上线再收；离线期间的记忆能并回正常记忆。",
+      "模型接入：安装者自己的 AI 可以直接读写记忆；会自动寻找本机可用的 AI 服务；也能用日常说话改设置，同一项再改会覆盖，不需要设置按钮。",
+      "支付：按金额生成付款入口，只给入口，不接触支付密码或银行卡。",
+      "本机运行：自动选择可用端口，数据只存在安装者自己的目录；能接多少端、存多少条由本机资源决定，不写死上限。",
+      "隐私：不统计使用情况、不主动联网；收集任何数据前都必须先明确同意。",
+      "开关：可随时停用；停用后不启动服务、不写数据，也不影响 AI 正常使用。"
     ],
     "en": [
-      "Per-character and per-source isolated memory with automatic snapshots, single-record delete and snapshot restore",
-      "Per-client Inbox/Outbox with targets and offline queueing; /cross writes and delivers; /memory/flush merges an offline source back and dedupes",
-      "Model integration: memory_hub_* tools for the installer's own model; auto-detect Ollama/LM Studio/vLLM and compatible endpoints; conversation config through memory_hub_configure for defaults/models/payment, keyed overwrite, no settings buttons",
-      "Optional payment config: presets, local payment intents and checkout URL; no payment credentials",
-      "Listens on 127.0.0.1 by default, data under the installer's DSH_HOME; no fixed cap on clients/characters/sources, limits accept 0 for unlimited",
-      "No telemetry, no outbound collection, no installer/user data collection without explicit consent",
-      "Disable with enabled: false or disabled: true; no server, tools or model impact"
+      "Memory: separate memories per character and client, so they never overwrite each other; automatic backup before writes, and a mistakenly deleted item can be restored.",
+      "Messaging: send between desktop, phone and QQ-style clients; offline messages queue locally and arrive when back online; offline memory can be merged back.",
+      "Model integration: the installer's own AI can read and write memory; local AI services are detected automatically; settings can also be changed by talking naturally, with the same key overwritten instead of duplicated.",
+      "Payment: generates a payment entry for a chosen amount; it never touches payment passwords or bank cards.",
+      "Local only: picks a free local port automatically, keeps data in the installer's own folder; the number of clients and records is limited only by local resources.",
+      "Privacy: no usage statistics and no outbound collection; any collection needs explicit consent first.",
+      "Switch: can be disabled at any time; when disabled it starts no service, writes no data and does not affect the AI."
     ]
   }
 }

@@ -40,5 +40,5 @@
   "engines": {
     "node": ">=20"
   },
-  "displayVersion": "0.1.10.0"
+  "displayVersion": "0.1.10.1"
 }

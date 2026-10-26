@@ -9,6 +9,8 @@
         host: 127.0.0.1
         port: 3177
         snapshotLimit: 100
+        # 0 = unlimited. The number of characters/sources/clients is not capped.
+        historyLimit: 1000
         inboxLimit: 200
         # file: ""   # default: ~/.dsh/memory-hub.json
         # Empty by default: no channel URLs, accounts or personal data ship in this package.

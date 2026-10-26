@@ -31,9 +31,10 @@ export function apply(ctx, config = {}) {
   const snapshotLimit = Number.isFinite(snapshotRaw) && snapshotRaw > 0 ? Math.min(5000, snapshotRaw) : 0;
   const historyRaw = Number(config.historyLimit ?? 1000);
   const historyLimit = Number.isFinite(historyRaw) && historyRaw > 0 ? historyRaw : 0;
+  const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
   const file = config.file
     ? String(config.file)
-    : path.join(os.homedir(), '.dsh', 'memory-hub.json');
+    : path.join(dshHome, 'memory-hub.json');
   const channels = config.channels && typeof config.channels === 'object' ? config.channels : {};
   const payRaw = config.payment && typeof config.payment === 'object' ? config.payment : {};
   const payment = {

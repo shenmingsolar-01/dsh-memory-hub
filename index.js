@@ -205,7 +205,7 @@ export function apply(ctx, config = {}) {
   const modelPorts = Array.isArray(config.discoverPorts) && config.discoverPorts.length
     ? config.discoverPorts.map((n) => Number(n)).filter((n) => n > 0)
     : [11434, 1234, 8000, 8080, 5000];
-  const catalogUrl = String(config.catalogUrl || 'https://raw.githubusercontent.com/shenmingsolar-01/dsh-memory-hub/main/providers-catalog.json');
+  const catalogUrl = String(config.catalogUrl || 'https://fastly.jsdelivr.net/gh/shenmingsolar-01/dsh-memory-hub@main/providers-catalog.json');
   const catalogCacheFile = path.join(dshHome, 'memory-hub-providers.json');
   const catalogTtlMs = Number(config.catalogTtlMs || 24 * 3600 * 1000);
 

@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`be-0.2.20`
+版本：`be-0.3.0`
 
 多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。
 
@@ -17,6 +17,7 @@
 - 默认只监听 127.0.0.1，数据落在安装者自己的 DSH_HOME；端数、角色数、来源数不设固定上限，容量上限可配 0 表示不限；
 - 默认无遥测、不主动联网、不收集安装者或用户数据；任何收集需显式同意；
 - 支持 enabled: false 或 disabled: true 停用，停用后不启动服务、不注册工具、不影响安装者模型；
+- 模型适配：自动探测本机 Ollama/LM Studio/vLLM 等 OpenAI 兼容服务，也可手动登记任意模型端口，不绑定 DeepSeek；
 <!-- FEATURES:END -->
 
 ## 它不做什么
@@ -352,6 +353,38 @@ GET /payment/intents
 ```
 
 默认 `tools: true`，但角色和来源都是通用名，不含任何人的数据；模型写入的内容只存在安装者自己的 `~/.dsh/memory-hub.json`。
+## 模型适配（不绑定 DeepSeek）
+
+记忆工具本身不依赖某一家模型。插件会探测本机常见的 AI 服务：
+
+- Ollama：`127.0.0.1:11434`
+- LM Studio：`127.0.0.1:1234`
+- vLLM / 其他 OpenAI 兼容服务：`127.0.0.1:8000`、`8080`、`5000`
+
+也可以手动登记：
+
+```yaml
+models:
+  - name: local-ollama
+    baseUrl: http://127.0.0.1:11434
+    protocol: ollama
+  - name: my-openai-compatible
+    baseUrl: http://127.0.0.1:9000
+    apiKeyEnv: MY_MODEL_KEY
+    protocol: openai
+```
+
+接口：
+
+```http
+GET /models
+POST /models/probe
+{ "baseUrl": "http://127.0.0.1:11434" }
+```
+
+只探测模型列表，不发送记忆内容、不上传数据。
+
+没有开放 API 的桌面 AI 软件无法直接适配，需要它的客户端主动调用本插件的 HTTP 接口或模型工具。
 ## 数据格式
 
 ```json

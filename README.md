@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`0.1.10.2`
+版本：`0.1.10.4`
 
 多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
 
@@ -162,8 +162,8 @@ GET /health
 POST /cross
 {
   "character": "assistant",
-  "from": "qq",
-  "to": "qq-channel",
+  "from": "chat-app",
+  "to": "chat-channel",
   "text": "我到家了"
 }
 ```
@@ -214,7 +214,7 @@ POST /memory/restore
 <a id="cat-messaging"></a>
 ## 跨端收件箱（Inbox）
 
-任意一端把消息写进收件箱，其他端轮询取走。适合「QQ 让角色在鲸聊里回复」这类跨端投递。
+任意一端把消息写进收件箱，其他端轮询取走。适合「手机端收到消息，让电脑端角色回复」这类跨端投递。
 
 ### 写入
 
@@ -222,7 +222,7 @@ POST /memory/restore
 POST /inbox
 {
   "character": "assistant",
-  "from": "qq",
+  "from": "chat-app",
   "text": "我到家了"
 }
 ```
@@ -235,8 +235,8 @@ POST /inbox
 POST /cross
 {
   "character": "assistant",
-  "from": "qq",
-  "to": "qq-channel",
+  "from": "chat-app",
+  "to": "chat-channel",
   "text": "我到家了"
 }
 ```
@@ -294,7 +294,7 @@ channels:
 - id: memory-hub
   config:
     channels:
-      qq:
+      team-chat:
         url: https://channel.example.invalid/hook
         body:
           who: your-character
@@ -309,7 +309,7 @@ channels:
 ```http
 POST /outbox
 {
-  "channel": "qq",
+  "channel": "team-chat",
   "character": "assistant",
   "text": "晚上好，记得吃饭"
 }
@@ -590,7 +590,7 @@ splash: false
   "characters": {
     "shenshen": {
       "sources": {
-        "qq": { "history": [], "updatedAt": 0 },
+        "app": { "history": [], "updatedAt": 0 },
         "pc": { "history": [], "updatedAt": 0 },
         "mobile": { "history": [], "updatedAt": 0 }
       },
@@ -602,10 +602,15 @@ splash: false
 
 ## 接入建议
 
-- QQ 桥：每轮消息写入 `source: "qq"`；
-- 电脑客户端：写入 `source: "pc"`；
-- 手机网页/APP：写入 `source: "mobile"`；
-- 模型回复前读取最近 N 条，作为跨端共同记忆。
+插件只认端口，不认品牌，也没有内置任何私有聊天软件的数据。
+
+- 任何能发 HTTP 请求的公共聊天软件都可以接入，消息写入时用软件名作 `source`，例如 `slack`、`telegram`、`line`；
+- 常见软件直接用内置适配器：Slack、Discord、Telegram、飞书、企业微信、LINE、Matrix；
+- 客户端回复前读取最近 N 条，作为跨端共同记忆；
+- 离线端重新上线时先拉 `/inbox`，再继续写入；
+- 不同地区发送时带 `{{locale}}`，由各自软件按当地语言展示。
+
+公共 Webhook、Bot API、Matrix 客户端 API 都只需要安装者自己的地址和 Token，不依赖任何作者的私有服务。
 
 ## 已知限制
 

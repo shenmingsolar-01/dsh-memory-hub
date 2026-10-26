@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-hub",
-  "version": "0.2.10-be",
+  "version": "0.2.11-be",
   "description": "Local memory hub for multi-channel DSH characters: per-source isolation, automatic snapshots, delete/restore API, plus inbox/outbox for cross-channel delivery.",
   "type": "module",
   "main": "index.js",

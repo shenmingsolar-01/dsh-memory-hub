@@ -1,0 +1,28 @@
+# dsh-memory-hub bundle patch.
+# The Loader inserts this plugin row; override the config with a same-id row
+# in your profile's cordis.patch.yml.
+- insert:
+    - id: memory-hub
+      name: dsh-memory-hub
+      config:
+        host: 127.0.0.1
+        port: 3177
+        snapshotLimit: 100
+        inboxLimit: 200
+        # file: ""   # default: ~/.dsh/memory-hub.json
+        # Empty by default: no channel URLs, accounts or personal data ship in this package.
+        # Example (fill in your own local endpoint):
+        # channels:
+        #   qq:
+        #     url: http://127.0.0.1:3100/act
+        #     body:
+        #       who: your-character
+        #       action: message
+        #       text: '{{text}}'
+        channels: {}
+        # Optional: merge an offline source back at startup.
+        # flush:
+        #   - character: your-character
+        #     from: offline
+        #     to: default
+        flush: []

@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`0.1.10.4`
+版本：`0.1.10.5`
 
 多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
 
@@ -374,9 +374,9 @@ POST /memory/flush
   config:
     payment:
       enabled: true
-      provider: alipay
+      provider: auto
       checkoutUrl: https://your-provider.example/top_up
-      currency: CNY
+      currency: ''   # 留空则使用地区货币
       presets: [10, 20, 50, 100, 300, 500]
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-hub",
-  "version": "0.1.1-be",
+  "version": "0.1.1",
   "description": "A local memory hub for multi-channel AI characters: separate memories per character and client, automatic backups and restore, message inbox/outbox with offline queueing, model-callable memory tools, ",
   "type": "module",
   "main": "index.js",
@@ -37,5 +37,5 @@
   "engines": {
     "node": ">=20"
   },
-  "displayVersion": "0.1.1.5.0"
+  "displayVersion": "0.1.1.5.1"
 }

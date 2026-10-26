@@ -1,6 +1,7 @@
 export function parseInstruction(text) {
-  const out = { applied: [], defaults: {}, payment: {}, models: [], notes: '' };
+  const out = { applied: [], defaults: {}, payment: {}, models: [], apis: [], bind: false, notes: '' };
   const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let api = null;
   for (const line of lines) {
     const m = line.match(/^([^=:：]+)\s*[=:：]\s*(.*)$/);
     if (!m) continue;
@@ -13,6 +14,25 @@ export function parseInstruction(text) {
     } else if (/默认来源|source|来源/.test(key)) {
       out.defaults.defaultSource = value;
       out.applied.push('默认来源');
+    } else if (/接口地址|api地址|baseurl/.test(key)) {
+      api = api || {};
+      api.baseUrl = value;
+      out.applied.push('接口地址');
+    } else if (/接口名称|api名称|api name/.test(key)) {
+      api = api || {};
+      api.name = value;
+      out.applied.push('接口名称');
+    } else if (/接口密钥|api密钥|apikeyenv|key env/.test(key)) {
+      api = api || {};
+      api.apiKeyEnv = value;
+      out.applied.push('接口密钥环境变量');
+    } else if (/接口模型|api模型|api model/.test(key)) {
+      api = api || {};
+      api.model = value;
+      out.applied.push('接口模型');
+    } else if (/绑定接口|绑定这个接口|bind/.test(key)) {
+      out.bind = /^(是|对|yes|true|1|开)$/i.test(value);
+      out.applied.push('绑定接口');
     } else if (/支付地址|checkout|支付链接/.test(key)) {
       out.payment.checkoutUrl = value;
       out.applied.push('支付地址');
@@ -30,5 +50,6 @@ export function parseInstruction(text) {
       out.applied.push('备注');
     }
   }
+  if (api && /^https?:\/\//.test(api.baseUrl || '')) out.apis.push(api);
   return out;
 }

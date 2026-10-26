@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-hub",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A local memory hub for multi-channel AI characters: separated memories with backups and restore, message inbox/outbox with offline queueing, model detection and binding, optional payment entry. Everyt",
   "type": "module",
   "main": "index.js",
@@ -22,6 +22,7 @@
     "providers.mjs",
     "providers-catalog.json",
     "regions.mjs",
+    "i18n.mjs",
     "cordis.patch.yml",
     "README.md",
     "features.json",
@@ -38,5 +39,5 @@
   "engines": {
     "node": ">=20"
   },
-  "displayVersion": "0.1.6.0"
+  "displayVersion": "0.1.7.0"
 }

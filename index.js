@@ -519,8 +519,7 @@ export function apply(ctx, config = {}) {
       json(res, 200, {
         ok: true,
         ...privacy,
-        network: binding ? 'model-bound' : 'local-only',
-        note: 'No telemetry, no outbound collection. Cloud lookups only after a model is bound; data stays on this machine.',
+        note: 'No telemetry, no outbound collection. Data stays on this machine. Any future collection requires explicit consent.',
       });
       return;
     }

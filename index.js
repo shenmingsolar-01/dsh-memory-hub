@@ -26,6 +26,17 @@ export function apply(ctx, config = {}) {
     ? String(config.file)
     : path.join(os.homedir(), '.dsh', 'memory-hub.json');
   const channels = config.channels && typeof config.channels === 'object' ? config.channels : {};
+  const payRaw = config.payment && typeof config.payment === 'object' ? config.payment : {};
+  const payment = {
+    enabled: payRaw.enabled === true,
+    provider: String(payRaw.provider || 'alipay'),
+    checkoutUrl: String(payRaw.checkoutUrl || ''),
+    currency: String(payRaw.currency || 'CNY'),
+    presets: Array.isArray(payRaw.presets) ? payRaw.presets.map((n) => Number(n)).filter((n) => n > 0) : [],
+    successMessage: String(payRaw.successMessage || ''),
+  };
+  const paymentsFile = file.replace(/\.json$/i, '') + '-payments.json';
+  const paymentLimit = Math.max(10, Math.min(1000, Number(payRaw.historyLimit || 200)));
   const outboxFile = file.replace(/\.json$/i, '') + '-outbox.json';
   const outboxLimit = Math.max(10, Math.min(1000, Number(config.outboxLimit || 200)));
 
@@ -119,6 +130,38 @@ export function apply(ctx, config = {}) {
     };
     items.push(item);
     saveInbox(items);
+    return item;
+  };
+
+  const loadPayments = () => {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(paymentsFile, 'utf8'));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const savePayments = (items) => {
+    fs.mkdirSync(path.dirname(paymentsFile), { recursive: true });
+    fs.writeFileSync(paymentsFile, JSON.stringify(items.slice(-paymentLimit), null, 2), 'utf8');
+  };
+
+  const pushPaymentIntent = (data) => {
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    if (!payment.enabled || !payment.checkoutUrl) return null;
+    const item = {
+      at: Date.now(),
+      amount,
+      currency: payment.currency,
+      provider: payment.provider,
+      target: String(data.target || ''),
+      custom: !payment.presets.includes(amount),
+    };
+    const items = loadPayments();
+    items.push(item);
+    savePayments(items);
     return item;
   };
 
@@ -219,6 +262,16 @@ export function apply(ctx, config = {}) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/payment') {
+      json(res, 200, { ok: true, payment });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/payment/intents') {
+      json(res, 200, { ok: true, items: loadPayments().slice(-50) });
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/memory') {
       const store = load();
       const key = safeName(url.searchParams.get('character'));
@@ -285,6 +338,26 @@ export function apply(ctx, config = {}) {
           delivery = await deliver(String(data.deliverTo), { text, character: item.character });
         }
         json(res, 200, { ok: true, item, delivery });
+        return;
+      }
+
+      if (url.pathname === '/payment/intent') {
+        if (!payment.enabled || !payment.checkoutUrl) {
+          json(res, 400, { ok: false, error: 'payment is not configured' });
+          return;
+        }
+        const item = pushPaymentIntent(data);
+        if (!item) { json(res, 400, { ok: false, error: 'invalid amount' }); return; }
+        const url = new URL(payment.checkoutUrl);
+        url.searchParams.set('amount', String(item.amount));
+        json(res, 200, {
+          ok: true,
+          amount: item.amount,
+          currency: item.currency,
+          provider: item.provider,
+          custom: item.custom,
+          url: url.toString(),
+        });
         return;
       }
 

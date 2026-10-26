@@ -11,7 +11,7 @@
                              "模型接入：安装者的 AI 可直接读写记忆；会自动识别本机服务和主流厂商模型；绑定后才联网访问该模型；可用日常说话添加 API、绑定模型，同一项再改会覆盖。",
                              "支付：自动识别安装者所在国家/地区，显示当地货币和支付方式；只生成付款入口，不接触支付密码或银行卡。",
                              "本机运行：自动选择可用端口，数据只存在安装者自己的目录；能接多少端、存多少条由本机资源决定。",
-                             "边界：不统计、不收集安装者或用户数据，任何收集都要先明确同意；可随时停用，停用后不启动服务、不写数据，也不影响 AI 使用。"
+                             "边界：不统计、不收集安装者或用户数据，任何收集都要先明确同意；语言跟随系统，提示和付款界面自动本地化，切换语言不影响已有数据和功能；可随时停用，停用后不启动服务、不写数据，也不影响 AI 使用。"
                          ],
                   "en":  [
                              "Memory: separate memories per character and client, so they never overwrite each other; automatic backup before writes, and a mistakenly deleted item can be restored.",
@@ -19,7 +19,7 @@
                              "Model integration: the installer\u0027s AI reads and writes memory; local services and major providers are detected; network access to a model happens only after binding; custom APIs can be added and bound by talking, with the same key overwritten.",
                              "Payment: detects the installer region and shows local currency and methods; generates a payment entry only, never touching payment passwords or bank cards.",
                              "Local only: picks a free local port automatically and keeps data in the installer\u0027s own folder; the number of clients and records depends on local resources.",
-                             "Boundaries: no usage statistics and no installer/user data collection without explicit consent; can be disabled at any time, and when disabled it starts no service, writes no data and does not affect the AI."
+                             "Boundaries: no usage statistics and no installer/user data collection without explicit consent; language follows the system with localized prompts and payment UI, and switching language never affects existing data or features; can be disabled at any time without affecting the AI."
                          ]
               }
 }

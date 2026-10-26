@@ -430,6 +430,148 @@ export function apply(ctx, config = {}) {
     });
   });
 
+  const defaultCharacter = safeName(config.defaultCharacter, 'default') || 'default';
+  const defaultSource = safeName(config.defaultSource, 'model') || 'model';
+  const toolsEnabled = config.tools !== false;
+
+  if (toolsEnabled && ctx.tools?.register) {
+    ctx.effect(() => {
+      const disposers = [];
+      const reg = (definition) => {
+        try { disposers.push(ctx.tools.register(definition)); } catch { /* ignore */ }
+      };
+
+      reg({
+        name: 'memory_hub_write',
+        description: '把当前角色的一段对话写入本机记忆中枢。安装者自己的模型可直接调用，数据只落本机。',
+        parameters: {
+          type: 'object',
+          properties: {
+            character: { type: 'string', description: '角色名，默认取插件配置' },
+            source: { type: 'string', description: '来源，默认 model' },
+            role: { type: 'string', enum: ['user', 'assistant'], description: '消息角色' },
+            text: { type: 'string', description: '消息内容' },
+            messages: { type: 'array', description: '可选，批量消息 [{role,text}]', items: { type: 'object' } },
+          },
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const who = String(args.character || defaultCharacter);
+          const src = String(args.source || defaultSource);
+          const history = Array.isArray(args.messages)
+            ? args.messages
+            : [{ role: args.role === 'user' ? 'user' : 'assistant', text: String(args.text || '') }];
+          const result = append(who, src, history);
+          return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_read',
+        description: '读取本机记忆中枢里某个角色/来源的最近记忆。',
+        parameters: {
+          type: 'object',
+          properties: {
+            character: { type: 'string' },
+            source: { type: 'string' },
+            limit: { type: 'number' },
+          },
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const store = load();
+          const key = safeName(args.character || defaultCharacter);
+          const c = key ? store.characters[key] : null;
+          const limit = Math.max(1, Math.min(100, Number(args.limit || 20)));
+          const sources = {};
+          for (const [name, src] of Object.entries(c?.sources || {})) {
+            if (args.source && name !== safeName(args.source)) continue;
+            sources[name] = (src.history || []).slice(-limit);
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ character: key, sources }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_delete',
+        description: '删除本机记忆中枢某来源的一条记录，不影响其他来源。',
+        parameters: {
+          type: 'object',
+          properties: {
+            character: { type: 'string' },
+            source: { type: 'string' },
+            text: { type: 'string' },
+            at: { type: 'number' },
+          },
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const store = load();
+          const c = character(store, args.character || defaultCharacter);
+          if (!c) return { content: [{ type: 'text', text: JSON.stringify({ ok: false, error: 'invalid character' }) }] };
+          const key = safeName(args.source || defaultSource, defaultSource) || defaultSource;
+          const src = c.sources[key];
+          if (!src) return { content: [{ type: 'text', text: JSON.stringify({ ok: true, deleted: 0 }) }] };
+          const before = src.history.length;
+          snapshot(c);
+          src.history = src.history.filter((m) => {
+            if (args.at && Number(args.at) === Number(m.at)) return false;
+            if (args.text && String(args.text) === String(m.text)) return false;
+            return true;
+          });
+          src.updatedAt = Date.now();
+          save(store);
+          return { content: [{ type: 'text', text: JSON.stringify({ ok: true, deleted: before - src.history.length }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_flush',
+        description: '把离线来源并回正常来源，去重后清空离线来源。',
+        parameters: {
+          type: 'object',
+          properties: {
+            character: { type: 'string' },
+            from: { type: 'string' },
+            to: { type: 'string' },
+          },
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const added = flushSource(args.character || defaultCharacter, args.from || 'offline', args.to || defaultSource);
+          return { content: [{ type: 'text', text: JSON.stringify({ ok: true, added }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_payment_intent',
+        description: '按安装者配置生成支付意图，返回带金额的支付地址；不处理支付凭证。',
+        parameters: {
+          type: 'object',
+          properties: {
+            amount: { type: 'number' },
+            target: { type: 'string' },
+          },
+          required: ['amount'],
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const item = pushPaymentIntent({ amount: args.amount, target: args.target });
+          if (!item) return { content: [{ type: 'text', text: JSON.stringify({ ok: false, error: 'payment disabled or invalid amount' }) }] };
+          const url = new URL(payment.checkoutUrl);
+          url.searchParams.set('amount', String(item.amount));
+          return { content: [{ type: 'text', text: JSON.stringify({ ok: true, ...item, url: url.toString() }) }] };
+        },
+      });
+
+      return () => {
+        for (const dispose of disposers) {
+          try { dispose?.(); } catch { /* ignore */ }
+        }
+      };
+    }, 'memory-hub.tools');
+  }
+
   const flushRules = Array.isArray(config.flush) ? config.flush : [];
   for (const rule of flushRules) {
     try {

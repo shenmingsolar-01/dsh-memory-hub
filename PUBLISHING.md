@@ -36,7 +36,7 @@ dsh-plugin
 
 ## 4. 发 Release
 
-- Tag：`1.1.10.2`
+- Tag：`1.1.10.3`
 - 附件：根目录的 `dsh-memory-hub.tgz`（文件名不要带版本号）
 - Release 地址应能访问：
 

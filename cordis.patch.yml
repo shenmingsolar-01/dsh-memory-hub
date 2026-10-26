@@ -5,6 +5,7 @@
     - id: memory-hub
       name: dsh-memory-hub
       config:
+        enabled: true
         host: 127.0.0.1
         port: 3177
         snapshotLimit: 100

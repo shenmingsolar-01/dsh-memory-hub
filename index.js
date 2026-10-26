@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
 import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
-import { resolveRegion } from './regions.mjs';
+import { resolveRegion, REGIONS } from './regions.mjs';
 import { detectLocale, t, SUPPORTED } from './i18n.mjs';
 
 export const name = 'memory-hub';
@@ -60,6 +60,7 @@ export function apply(ctx, config = {}) {
     presets: Array.isArray(payRaw.presets) ? payRaw.presets.map((n) => Number(n)).filter((n) => n > 0) : [],
     successMessage: String(payRaw.successMessage || ''),
   };
+  let paymentRegion = String(savedSettings.paymentRegion || payRaw.region || '');
   const paymentsFile = file.replace(/\.json$/i, '') + '-payments.json';
   const paymentLimit = Math.max(10, Math.min(1000, Number(payRaw.historyLimit || 200)));
   const privacy = {
@@ -532,8 +533,44 @@ export function apply(ctx, config = {}) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/payment/regions') {
+      json(res, 200, {
+        ok: true,
+        regions: Object.entries(REGIONS).filter(([id]) => id !== 'DEFAULT').map(([id, r]) => ({
+          country: id,
+          currency: r.currency,
+          locale: r.locale,
+          methods: r.methods.map(([mid, label]) => ({ id: mid, label })),
+        })),
+        selected: paymentRegion || 'auto',
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/payment/region') {
+      const data = await readJsonBody(req);
+      const country = String(data.region || data.country || '').trim().toUpperCase();
+      if (country && country !== 'AUTO' && !REGIONS[country]) {
+        json(res, 400, { ok: false, error: 'unknown region' });
+        return;
+      }
+      paymentRegion = country === 'AUTO' ? '' : country;
+      const settings = loadSettingsFile();
+      settings.paymentRegion = paymentRegion;
+      settings.updatedAt = Date.now();
+      saveSettingsFile(settings);
+      const region = resolveRegion({ ...payRaw, region: paymentRegion });
+      const method = data.method ? String(data.method) : '';
+      if (method && !region.methods.some((m) => m.id === method)) {
+        json(res, 400, { ok: false, error: 'method not available in this region', region });
+        return;
+      }
+      json(res, 200, { ok: true, paymentRegion, region, method: method || region.methods[0]?.id || '' });
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/payment') {
-      json(res, 200, { ok: true, payment, region: resolveRegion(payRaw) });
+      json(res, 200, { ok: true, payment, region: resolveRegion({ ...payRaw, region: paymentRegion }) });
       return;
     }
 
@@ -618,8 +655,12 @@ export function apply(ctx, config = {}) {
         }
         const item = pushPaymentIntent(data);
         if (!item) { json(res, 400, { ok: false, error: t(locale, 'invalid_amount') }); return; }
-        const region = resolveRegion(payRaw);
+        const region = resolveRegion({ ...payRaw, region: data.region || paymentRegion });
         const method = String(data.method || region.methods[0]?.id || 'card');
+        if (!region.methods.some((m) => m.id === method)) {
+          json(res, 400, { ok: false, error: 'method not available in this region', region });
+          return;
+        }
         const url = new URL(payment.checkoutUrl);
         url.searchParams.set('amount', String(item.amount));
         url.searchParams.set('currency', region.currency);
@@ -895,6 +936,7 @@ export function apply(ctx, config = {}) {
           if (parsed.defaults.defaultSource) defaultSource = safeName(parsed.defaults.defaultSource, defaultSource) || defaultSource;
           if (parsed.payment.checkoutUrl) payment.checkoutUrl = parsed.payment.checkoutUrl;
           if (Array.isArray(parsed.payment.presets) && parsed.payment.presets.length) payment.presets = parsed.payment.presets;
+          if (parsed.payment.region) paymentRegion = String(parsed.payment.region).toUpperCase();
           if (payment.checkoutUrl) payment.enabled = true;
           for (const m of parsed.models) {
             configuredModels = configuredModels.filter((x) => x.name !== m.name && x.baseUrl !== m.baseUrl);

@@ -1,7 +1,7 @@
 {
   "name": "dsh-memory-hub",
-  "version": "0.2.11-be",
-  "description": "Local memory hub for multi-channel DSH characters: per-source isolation, automatic snapshots, delete/restore API, plus inbox/outbox for cross-channel delivery.",
+  "version": "0.2.12-be",
+  "description": "Local memory hub for multi-channel DSH characters: per-source memory with snapshots and restore, inbox/outbox with per-client targets, offline merge, and optional payment intents.",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -20,6 +20,7 @@
     "index.js",
     "cordis.patch.yml",
     "README.md",
+    "features.json",
     "LICENSE",
     "PUBLISHING.md",
     "awesome-entry.yml",

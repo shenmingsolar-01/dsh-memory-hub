@@ -15,7 +15,7 @@
                              "默认无遥测、不主动联网、不收集安装者或用户数据；任何收集需显式同意",
                              "支持 enabled: false 或 disabled: true 停用，停用后不启动服务、不注册工具、不影响安装者模型",
                              "模型适配：自动探测本机 Ollama/LM Studio/vLLM 等 OpenAI 兼容服务，也可手动登记任意模型端口，不绑定 DeepSeek",
-                             "独立设置页：默认角色/来源、模型探测与添加、支付配置、自由文本指令，按键保存按 key 覆盖，不注入 AI 主界面"
+                             "对话配置：直接和 AI 说话，模型调用 memory_hub_configure 识别并写入默认角色/来源、模型、支付配置，同键覆盖，无设置按键"
                          ],
                   "en":  [
                              "Per-character and per-source isolated memory with automatic snapshots, single-record delete and snapshot restore",
@@ -27,7 +27,7 @@
                              "No telemetry, no outbound collection, no installer/user data collection without explicit consent",
                              "Disable with enabled: false or disabled: true; no server, tools or model impact",
                              "Model adapters: auto-detect local Ollama/LM Studio/vLLM and OpenAI-compatible endpoints, or register any model port; not tied to DeepSeek",
-                             "Standalone settings page: defaults, model probe/register, payment config and free-text instructions; keyed overwrite, no host UI injection"
+                             "Conversation config: talk to the model, memory_hub_configure applies defaults/models/payment by key, overwriting, no settings buttons"
                          ]
               }
 }

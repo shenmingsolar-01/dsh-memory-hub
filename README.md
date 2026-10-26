@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`0.1.10.5`
+版本：`1.1.10.0`
 
 多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
 
@@ -237,18 +237,22 @@ POST /cross
   "character": "assistant",
   "from": "chat-app",
   "to": "chat-channel",
+  "target": "mobile",
   "text": "我到家了"
 }
 ```
 
-先写入收件箱，再按 `to` 投递到已配置通道；适合「一端说一句，另一端也收到」。
+先写入收件箱，再按 `to` 投递到已配置通道；`target` 可选，指定只有哪一端能取到这条消息。
+
 ### 读取
 
 ```http
-GET /inbox?character=assistant&since=0
+GET /inbox?character=assistant&since=0&client=mobile
 ```
 
-只返回 `since` 之后的新消息，避免重复显示。
+- `since` 之后的新消息才会返回，避免重复；
+- `client` 只取发给该端或未指定端（广播）的消息；
+- 不带 `client` 时返回全部。
 
 客户端可以轮询这个接口做本地通知；插件本身不直接发系统通知。
 

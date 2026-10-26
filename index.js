@@ -90,7 +90,7 @@ export function apply(ctx, config = {}) {
 
   const render = (value, vars) => {
     if (typeof value === 'string') {
-      return value.replace(/\{\{\s*(text|character|channel)\s*\}\}/g, (_, key) => String(vars[key] ?? ''));
+      return value.replace(/\{\{\s*(text|character|channel|locale)\s*\}\}/g, (_, key) => String(vars[key] ?? ''));
     }
     if (Array.isArray(value)) return value.map((v) => render(v, vars));
     if (value && typeof value === 'object') {
@@ -163,13 +163,14 @@ export function apply(ctx, config = {}) {
     fs.writeFileSync(inboxFile, JSON.stringify(inboxLimit > 0 ? items.slice(-inboxLimit) : items, null, 2), 'utf8');
   };
 
-  const pushInbox = (characterName, text, from = 'unknown', role = 'assistant') => {
+  const pushInbox = (characterName, text, from = 'unknown', role = 'assistant', target = '') => {
     const items = loadInbox();
     const item = {
       at: Date.now(),
       character: safeName(characterName, 'default') || 'default',
       from: String(from || 'unknown').slice(0, 32),
       role: role === 'user' ? 'user' : 'assistant',
+      target: String(target || '').slice(0, 32),
       text: String(text || '').slice(0, 4000),
     };
     items.push(item);
@@ -265,7 +266,8 @@ export function apply(ctx, config = {}) {
     if (!base) return { ok: false, error: 'baseUrl required' };
     const key = apiKeyEnv ? process.env[apiKeyEnv] : '';
     const headers = key ? { authorization: `Bearer ${key}` } : {};
-    for (const path of ['/v1/models', '/api/tags']) {
+    const probePaths = /\/v1$/i.test(base) ? ['/models', '/api/tags'] : ['/v1/models', '/api/tags'];
+    for (const path of probePaths) {
       try {
         const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(1200) });
         if (!r.ok) continue;
@@ -473,7 +475,8 @@ export function apply(ctx, config = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/v1/models') {
-      const models = binding ? (PROVIDERS.find((p) => p.id === binding.providerId)?.models || []) : [];
+      const providerModels = binding ? (PROVIDERS.find((p) => p.id === binding.providerId)?.models || []) : [];
+      const models = binding?.model ? [binding.model, ...providerModels.filter((m) => m !== binding.model)] : providerModels;
       json(res, 200, {
         object: 'list',
         data: models.map((id) => ({ id, object: 'model', owned_by: binding?.providerId || 'memory-hub' })),
@@ -609,7 +612,13 @@ export function apply(ctx, config = {}) {
     if (req.method === 'GET' && url.pathname === '/inbox') {
       const key = safeName(url.searchParams.get('character'));
       const since = Number(url.searchParams.get('since') || 0);
-      const items = loadInbox().filter((m) => (!key || m.character === key) && Number(m.at) > since);
+      const client = String(url.searchParams.get('client') || url.searchParams.get('target') || '').trim();
+      const items = loadInbox().filter((m) => {
+        if (key && m.character !== key) return false;
+        if (Number(m.at) <= since) return false;
+        if (client && m.target && m.target !== client) return false;
+        return true;
+      });
       json(res, 200, { ok: true, items: items.slice(-50) });
       return;
     }
@@ -621,7 +630,7 @@ export function apply(ctx, config = {}) {
         channels: Object.entries(channels).map(([name, cfg]) => ({
           name,
           type: String(cfg.type || 'generic'),
-          url: String(cfg.url || '').replace(/\/\/[^/]+/, '//***'),
+          hasUrl: Boolean(cfg.url),
         })),
         locale,
       });
@@ -663,9 +672,9 @@ export function apply(ctx, config = {}) {
       if (url.pathname === '/cross') {
         const text = String(data.text || '').trim().slice(0, 4000);
         if (!text) { json(res, 400, { ok: false, error: 'text is required' }); return; }
-        const item = pushInbox(data.character || 'default', text, data.from || 'unknown', data.role || 'assistant');
+        const item = pushInbox(data.character || 'default', text, data.from || 'unknown', data.role || 'assistant', data.target || '');
         let delivery = null;
-        if (data.to) delivery = await deliver(String(data.to), { text, character: item.character });
+        if (data.to) delivery = await deliver(String(data.to), { text, character: item.character, locale });
         json(res, 200, { ok: true, item, delivery });
         return;
       }
@@ -673,10 +682,10 @@ export function apply(ctx, config = {}) {
       if (url.pathname === '/inbox') {
         const text = String(data.text || '').trim().slice(0, 4000);
         if (!text) { json(res, 400, { ok: false, error: 'text is required' }); return; }
-        const item = pushInbox(data.character || 'default', text, data.from || 'unknown', data.role || 'assistant');
+        const item = pushInbox(data.character || 'default', text, data.from || 'unknown', data.role || 'assistant', data.target || '');
         let delivery = null;
         if (data.deliverTo) {
-          delivery = await deliver(String(data.deliverTo), { text, character: item.character });
+          delivery = await deliver(String(data.deliverTo), { text, character: item.character, locale });
         }
         json(res, 200, { ok: true, item, delivery });
         return;
@@ -689,7 +698,12 @@ export function apply(ctx, config = {}) {
         }
         const item = pushPaymentIntent(data);
         if (!item) { json(res, 400, { ok: false, error: t(locale, 'invalid_amount') }); return; }
-        const region = resolveRegion({ ...payRaw, region: data.region || paymentRegion });
+        const requestedRegion = String(data.region || '').trim().toUpperCase();
+        if (requestedRegion && requestedRegion !== 'AUTO' && !REGIONS[requestedRegion]) {
+          json(res, 400, { ok: false, error: 'unknown region' });
+          return;
+        }
+        const region = resolveRegion({ ...payRaw, region: requestedRegion === 'AUTO' ? '' : (requestedRegion || paymentRegion) });
         const method = String(data.method || region.methods[0]?.id || 'card');
         if (!region.methods.some((m) => m.id === method)) {
           json(res, 400, { ok: false, error: 'method not available in this region', region });
@@ -739,6 +753,7 @@ export function apply(ctx, config = {}) {
         const c = character(store, data.character || data.who);
         if (!c) { json(res, 400, { ok: false, error: 'invalid character' }); return; }
         const src = c.sources[safeName(data.source, 'default') || 'default'];
+        const before = src?.history?.length || 0;
         if (src) {
           snapshot(c);
           src.history = (src.history || []).filter((m) => {
@@ -749,7 +764,7 @@ export function apply(ctx, config = {}) {
           src.updatedAt = Date.now();
           save(store);
         }
-        json(res, 200, { ok: true });
+        json(res, 200, { ok: true, deleted: src ? before - (src.history?.length || 0) : 0 });
         return;
       }
 

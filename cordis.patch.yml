@@ -47,5 +47,5 @@
         models: []
         discoverPorts: [11434, 1234, 8000, 8080, 5000]
         # Public catalog; refreshed at most once per day. Set "" to disable.
-        catalogUrl: https://raw.githubusercontent.com/shenmingsolar-01/dsh-memory-hub/main/providers-catalog.json
+        catalogUrl: https://fastly.jsdelivr.net/gh/shenmingsolar-01/dsh-memory-hub@main/providers-catalog.json
         catalogTtlMs: 86400000

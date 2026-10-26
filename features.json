@@ -8,19 +8,19 @@
                   "zh":  [
                              "记忆：按角色和客户端分开存，互不覆盖；写入前自动备份，删错一条也能恢复。",
                              "收发：电脑、手机、QQ 等端之间可以按端发消息；对方离线时先存本地，上线再收；离线期间的记忆能并回正常记忆。",
-                             "模型接入：安装者自己的 AI 能直接读写记忆；会自动识别本机 AI 服务和主流厂商（OpenAI、Claude、Gemini、DeepSeek、通义、GLM、Kimi 等）以及各自可用模型，目录可自动更新，新软件和新模型不用等插件升级；选定后可绑定该软件或模型，插件提供本地 OpenAI 兼容接口转发；也能用日常说话改设置，同一项再改会覆盖，不需要设置按钮。",
+                             "模型接入：安装者自己的 AI 能直接读写记忆；会自动识别本机 AI 服务和主流厂商（OpenAI、Claude、Gemini、DeepSeek、通义、GLM、Kimi 等）以及各自可用模型，目录可自动更新，新软件和新模型不用等插件升级；选定后可绑定该软件或模型，插件提供本地 OpenAI 兼容接口转发；也能用日常说话添加自己的 API 地址和模型，并绑定使用，同一项再改会覆盖，不需要设置按钮。",
                              "支付：按金额生成付款入口，只给入口，不接触支付密码或银行卡。",
                              "本机运行：自动选择可用端口，数据只存在安装者自己的目录；能接多少端、存多少条由本机资源决定，不写死上限。",
-                             "隐私：不统计使用情况、不主动联网；收集任何数据前都必须先明确同意。",
+                             "隐私：不统计使用情况；没绑定模型前只在本机探测，不联网查云端；绑定后才访问该模型和更新目录；收集任何数据前都必须先明确同意。",
                              "开关：可随时停用；停用后不启动服务、不写数据，也不影响 AI 正常使用。"
                          ],
                   "en":  [
                              "Memory: separate memories per character and client, so they never overwrite each other; automatic backup before writes, and a mistakenly deleted item can be restored.",
                              "Messaging: send between desktop, phone and QQ-style clients; offline messages queue locally and arrive when back online; offline memory can be merged back.",
-                             "Model integration: the installer\u0027s AI reads/writes memory; detects local AI services and major providers (OpenAI, Claude, Gemini, DeepSeek, Qwen, GLM, Kimi and more) with their models; the catalog updates automatically so new apps and models do not need a plugin upgrade; once bound, the plugin exposes a local OpenAI-compatible endpoint that forwards to it; settings can also be changed by talking naturally, overwriting the same key.",
+                             "Model integration: the installer\u0027s AI reads/writes memory; detects local AI services and major providers (OpenAI, Claude, Gemini, DeepSeek, Qwen, GLM, Kimi and more) with their models; the catalog updates automatically so new apps and models do not need a plugin upgrade; once bound, the plugin exposes a local OpenAI-compatible endpoint that forwards to it; custom API addresses can also be added by talking, then bound by talking naturally, overwriting the same key.",
                              "Payment: generates a payment entry for a chosen amount; it never touches payment passwords or bank cards.",
                              "Local only: picks a free local port automatically, keeps data in the installer\u0027s own folder; the number of clients and records is limited only by local resources.",
-                             "Privacy: no usage statistics and no outbound collection; any collection needs explicit consent first.",
+                             "Privacy: no usage statistics; before a model is bound only local probing happens, with no cloud lookup; after binding only that model and catalog updates are contacted; any collection needs explicit consent.",
                              "Switch: can be disabled at any time; when disabled it starts no service, writes no data and does not affect the AI."
                          ]
               }

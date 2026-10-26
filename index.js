@@ -28,7 +28,8 @@ function emptyStore() {
 export function apply(ctx, config = {}) {
   const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
   const host = String(config.host || '127.0.0.1');
-  const port = Number(config.port || 3177);
+  const configuredPort = config.port === undefined || config.port === null || config.port === 'auto' ? 0 : Number(config.port);
+  let port = Number.isFinite(configuredPort) && configuredPort > 0 ? configuredPort : 0;
   const snapshotRaw = Number(config.snapshotLimit ?? 100);
   const snapshotLimit = Number.isFinite(snapshotRaw) && snapshotRaw > 0 ? Math.min(5000, snapshotRaw) : 0;
   const settingsFile = path.join(dshHome, 'memory-hub-settings.json');
@@ -723,11 +724,27 @@ export function apply(ctx, config = {}) {
     } catch { /* ignore */ }
   }
 
+  let actualPort = port;
+  const portFile = path.join(dshHome, 'memory-hub.port');
+  server.on('listening', () => {
+    try { actualPort = server.address().port; } catch { /* ignore */ }
+    port = actualPort;
+    try {
+      fs.mkdirSync(path.dirname(portFile), { recursive: true });
+      fs.writeFileSync(portFile, `${host}:${actualPort}`, 'utf8');
+    } catch { /* ignore */ }
+    if (ctx.logger?.info) ctx.logger.info(`memory-hub 监听 http://${host}:${actualPort}`);
+  });
   server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && actualPort !== 0) {
+      if (ctx.logger?.warn) ctx.logger.warn(`端口 ${actualPort} 被占用，自动改用可用端口`);
+      actualPort = 0;
+      setTimeout(() => { try { server.listen(0, host); } catch { /* ignore */ } }, 50);
+      return;
+    }
     if (ctx.logger?.warn) ctx.logger.warn(`memory-hub 启动失败：${err.message}`);
   });
   server.listen(port, host);
-  if (ctx.logger?.info) ctx.logger.info(`memory-hub 监听 http://${host}:${port}`);
 
   if (ctx.effect) {
     ctx.effect(() => () => {

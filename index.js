@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
+import { scanProviders } from './providers.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -337,7 +338,8 @@ export function apply(ctx, config = {}) {
 
     if (req.method === 'GET' && url.pathname === '/models') {
       const detected = await detectModels();
-      json(res, 200, { ok: true, configured: configuredModels, detected });
+      const providers = await scanProviders();
+      json(res, 200, { ok: true, configured: configuredModels, detected, providers });
       return;
     }
 
@@ -657,6 +659,16 @@ export function apply(ctx, config = {}) {
         execute: async (args = {}) => {
           const added = flushSource(args.character || defaultCharacter, args.from || 'offline', args.to || defaultSource);
           return { content: [{ type: 'text', text: JSON.stringify({ ok: true, added }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_list_models',
+        description: '识别本机可用的 AI 服务和已配置的云端模型，返回厂商、协议、地址和模型列表。',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+        execute: async () => {
+          const providers = await scanProviders();
+          return { content: [{ type: 'text', text: JSON.stringify({ providers }) }] };
         },
       });
 

@@ -184,6 +184,43 @@ export function apply(ctx, config = {}) {
     return item;
   };
 
+  const configuredModels = Array.isArray(config.models) ? config.models.filter((m) => m && m.baseUrl).map((m) => ({
+    name: String(m.name || m.baseUrl),
+    baseUrl: String(m.baseUrl).replace(/\/+$/, ''),
+    apiKeyEnv: String(m.apiKeyEnv || ''),
+    protocol: String(m.protocol || 'openai'),
+  })) : [];
+  const modelPorts = Array.isArray(config.discoverPorts) && config.discoverPorts.length
+    ? config.discoverPorts.map((n) => Number(n)).filter((n) => n > 0)
+    : [11434, 1234, 8000, 8080, 5000];
+
+  const probeModel = async (baseUrl, apiKeyEnv = '') => {
+    const base = String(baseUrl || '').replace(/\/+$/, '');
+    if (!base) return { ok: false, error: 'baseUrl required' };
+    const key = apiKeyEnv ? process.env[apiKeyEnv] : '';
+    const headers = key ? { authorization: `Bearer ${key}` } : {};
+    for (const path of ['/v1/models', '/api/tags']) {
+      try {
+        const r = await fetch(base + path, { headers, signal: AbortSignal.timeout(1200) });
+        if (!r.ok) continue;
+        const j = await r.json().catch(() => ({}));
+        const list = Array.isArray(j.data) ? j.data : Array.isArray(j.models) ? j.models : [];
+        const models = list.map((m) => String(m.id || m.name || '')).filter(Boolean).slice(0, 50);
+        if (models.length || r.ok) return { ok: true, baseUrl: base, protocol: path.startsWith('/v1') ? 'openai' : 'ollama', models };
+      } catch { /* try next */ }
+    }
+    return { ok: false, error: 'no compatible endpoint' };
+  };
+
+  const detectModels = async () => {
+    const found = [];
+    for (const port of modelPorts) {
+      const r = await probeModel(`http://127.0.0.1:${port}`);
+      if (r.ok) found.push({ ...r, source: 'auto' });
+    }
+    return found;
+  };
+
   const character = (store, name) => {
     const key = safeName(name);
     if (!key) return null;
@@ -264,7 +301,7 @@ export function apply(ctx, config = {}) {
     return { ok: true, added: changed };
   };
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'access-control-allow-origin': '*',
@@ -278,6 +315,26 @@ export function apply(ctx, config = {}) {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, { ok: true, name, version: 1, file, port });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/models') {
+      const detected = await detectModels();
+      json(res, 200, { ok: true, configured: configuredModels, detected });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/models/probe') {
+      let data = {};
+      try {
+        data = await new Promise((resolve) => {
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch { resolve({}); } });
+        });
+      } catch { /* ignore */ }
+      const result = await probeModel(data.baseUrl, data.apiKeyEnv);
+      json(res, result.ok ? 200 : 400, result);
       return;
     }
 

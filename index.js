@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn, execFile } from 'node:child_process';
+import { spawn, execFile, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseInstruction } from './settings-parse.mjs';
 import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
@@ -1026,30 +1026,53 @@ export function apply(ctx, config = {}) {
     if (ctx.logger?.warn) ctx.logger.warn(`memory-hub 启动失败：${err.message}`);
   });
   const showSplash = () => {
-    if (config.splash === false || process.platform !== 'win32') return;
+    if (config.splash === false) return;
     try {
       const here = path.dirname(fileURLToPath(import.meta.url));
       const page = path.join(here, 'splash.html');
       if (!fs.existsSync(page)) return;
-      const candidates = [
-        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-      ];
-      const edge = candidates.find((p) => fs.existsSync(p));
-      if (!edge) return;
       const url = `file:///${page.replace(/\\/g, '/')}`;
       const profile = path.join(os.tmpdir(), 'worldlink-splash');
-      const child = spawn(edge, [
+      const args = [
         `--app=${url}`,
         '--window-size=780,500',
         '--window-position=570,290',
         `--user-data-dir=${profile}`,
         '--no-first-run',
         '--disable-features=Translate',
-      ], { detached: true, stdio: 'ignore' });
+      ];
+
+      let bin = '';
+      if (process.platform === 'win32') {
+        bin = [
+          'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+          'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        ].find((p) => fs.existsSync(p)) || '';
+      } else if (process.platform === 'darwin') {
+        bin = [
+          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+          '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+        ].find((p) => fs.existsSync(p)) || '';
+      } else {
+        for (const name of ['google-chrome', 'chromium', 'chromium-browser', 'microsoft-edge', 'brave-browser']) {
+          try {
+            bin = execFileSync('which', [name], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+            if (bin) break;
+          } catch { /* try next */ }
+        }
+      }
+      if (!bin) return;
+
+      const child = spawn(bin, args, { detached: true, stdio: 'ignore' });
       child.unref();
       setTimeout(() => {
-        try { execFile('taskkill', ['/PID', String(child.pid), '/T', '/F']); } catch { /* ignore */ }
+        try {
+          if (process.platform === 'win32') execFile('taskkill', ['/PID', String(child.pid), '/T', '/F']);
+          else child.kill('SIGTERM');
+        } catch { /* ignore */ }
       }, 2400);
     } catch { /* splash must never block the plugin */ }
   };

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
 import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
+import { resolveRegion } from './regions.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -525,7 +526,7 @@ export function apply(ctx, config = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/payment') {
-      json(res, 200, { ok: true, payment });
+      json(res, 200, { ok: true, payment, region: resolveRegion(payRaw) });
       return;
     }
 
@@ -610,12 +611,19 @@ export function apply(ctx, config = {}) {
         }
         const item = pushPaymentIntent(data);
         if (!item) { json(res, 400, { ok: false, error: 'invalid amount' }); return; }
+        const region = resolveRegion(payRaw);
+        const method = String(data.method || region.methods[0]?.id || 'card');
         const url = new URL(payment.checkoutUrl);
         url.searchParams.set('amount', String(item.amount));
+        url.searchParams.set('currency', region.currency);
+        url.searchParams.set('method', method);
+        url.searchParams.set('region', region.country);
         json(res, 200, {
           ok: true,
           amount: item.amount,
-          currency: item.currency,
+          currency: region.currency,
+          region,
+          method,
           provider: item.provider,
           custom: item.custom,
           url: url.toString(),

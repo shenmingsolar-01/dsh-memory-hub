@@ -1,20 +1,33 @@
 # dsh-memory-hub
 
-版本：`0.1.10.0`
+版本：`0.1.10.1`
 
-多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。
+多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
+
+**English**
+
+A local memory helper for AI characters: remembers, sends between clients, connects to your own AI, and offers optional payment. Everything stays on your own computer.
 
 **这个包不含任何个人数据、账号、路径或聊天记录。** 安装后只会保存安装者自己客户端写进来的数据。
 
 <!-- FEATURES:START -->
-## 它做什么
+## 它做什么（中文）
 
-- 记忆：按角色和客户端分开记；写之前自动备份，删错能恢复。；
-- 收发：任何可接端口的聊天软件都能接入；Slack、Discord、Telegram、飞书、企业微信、LINE、Matrix 自动适配；按地区和语言发送；离线先存、上线再收，离线记忆能并回。；
-- AI：你的 AI 能直接读写记忆；插件自动找本机和常用云端模型；选定后提供本地接口；也能用说话加自己的 API。；
-- 支付：按所在国家显示货币和付款方式，也能手动换国家；只给付款入口，不碰支付密码。；
-- 本机：自动选端口，数据只存自己电脑；能接多少端、存多少条看本机；启动时有 2 秒科技风开场。；
-- 边界：不统计、不收集，收集前先问你；可随时停用，停用不影响 AI；文字跟随系统语言。；
+- 记忆：按角色和客户端分开记；写之前自动备份，删错能恢复。
+- 收发：任何可接端口的聊天软件都能接入；Slack、Discord、Telegram、飞书、企业微信、LINE、Matrix 自动适配；按地区和语言发送；离线先存、上线再收，离线记忆能并回。
+- AI：你的 AI 能直接读写记忆；插件自动找本机和常用云端模型；选定后提供本地接口；也能用说话加自己的 API。
+- 支付：按所在国家显示货币和付款方式，也能手动换国家；只给付款入口，不碰支付密码。
+- 本机：自动选端口，数据只存自己电脑；能接多少端、存多少条看本机；启动时有 2 秒科技风开场。
+- 边界：不统计、不收集，收集前先问你；可随时停用，停用不影响 AI；文字跟随系统语言。
+
+### What it does (English)
+
+- Memory: keeps each character and client separate; backs up before writing, so a mistaken delete can be restored.
+- Messaging: any chat app that can connect to a port works; Slack, Discord, Telegram, Feishu, WeCom, LINE and Matrix are auto-adapted; messages follow region and language; offline messages wait and arrive later, and offline memory is merged back.
+- AI: your AI reads and writes memory directly; the plugin finds local and common cloud models, then exposes a local endpoint once you pick one; custom APIs can be added by talking.
+- Payment: shows the local currency and methods by country, and you can switch country manually; it only gives a payment entry and never touches payment passwords.
+- Local: picks a free port and keeps data on your computer; how many clients and records fit depends on your machine; a 2-second tech splash plays at startup.
+- Boundaries: no statistics and no collection without asking you first; can be disabled anytime without affecting the AI; text follows the system language.
 <!-- FEATURES:END -->
 
 ## 它不做什么

@@ -1,7 +1,7 @@
 {
   "name": "dsh-memory-hub",
   "version": "0.1.5",
-  "description": "A local memory hub for multi-channel AI characters: separate memories per character and client, automatic backups and restore, message inbox/outbox with offline queueing, model-callable memory tools, ",
+  "description": "A local memory hub for multi-channel AI characters: separated memories with backups and restore, message inbox/outbox with offline queueing, model detection and binding, optional payment entry. Everyt",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -37,5 +37,5 @@
   "engines": {
     "node": ">=20"
   },
-  "displayVersion": "0.1.5.1"
+  "displayVersion": "0.1.5.2"
 }

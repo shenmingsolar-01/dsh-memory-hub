@@ -1,44 +1,44 @@
 {
-    "name":  "dsh-memory-hub",
-    "version":  "1.1.10",
-    "description":  "A local memory helper for AI characters: remembers, sends between clients, connects to your own AI, and offers optional payment. Everything stays on your own computer.",
-    "type":  "module",
-    "main":  "index.js",
-    "license":  "MIT",
-    "keywords":  [
-                     "dsh",
-                     "dsh-plugin",
-                     "cordis-plugin",
-                     "memory",
-                     "cross-channel",
-                     "be-0.2.3",
-                     "inbox",
-                     "outbox",
-                     "ai-companion"
-                 ],
-    "files":  [
-                  "index.js",
-                  "settings-parse.mjs",
-                  "providers.mjs",
-                  "providers-catalog.json",
-                  "regions.mjs",
-                  "i18n.mjs",
-                  "splash.html",
-                  "cordis.patch.yml",
-                  "README.md",
-                  "features.json",
-                  "LICENSE",
-                  "PUBLISHING.md",
-                  "awesome-entry.yml",
-                  "assets/icon-180.png"
-              ],
-    "dsh":  {
-                "bundle":  {
-                               "patch":  "./cordis.patch.yml"
-                           }
-            },
-    "engines":  {
-                    "node":  "\u003e=20"
-                },
-    "displayVersion":  "1.1.10.0"
+  "name": "dsh-memory-hub",
+  "version": "1.1.10",
+  "description": "A local memory helper for AI characters: remembers, sends between clients, connects to your own AI, and offers optional payment. Everything stays on your own computer.",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "cordis-plugin",
+    "memory",
+    "cross-channel",
+    "be-0.2.3",
+    "inbox",
+    "outbox",
+    "ai-companion"
+  ],
+  "files": [
+    "index.js",
+    "settings-parse.mjs",
+    "providers.mjs",
+    "providers-catalog.json",
+    "regions.mjs",
+    "i18n.mjs",
+    "splash.html",
+    "cordis.patch.yml",
+    "README.md",
+    "features.json",
+    "LICENSE",
+    "PUBLISHING.md",
+    "awesome-entry.yml",
+    "assets/icon-180.png"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "displayVersion": "1.1.10.1"
 }

@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`0.1.10.1`
+版本：`0.1.10.2`
 
 多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
 
@@ -30,6 +30,19 @@ A local memory helper for AI characters: remembers, sends between clients, conne
 - Boundaries: no statistics and no collection without asking you first; can be disabled anytime without affecting the AI; text follows the system language.
 <!-- FEATURES:END -->
 
+## 功能分类 / Feature Index
+
+点分类名直接跳到对应功能说明。Click a category to jump to its section.
+
+| 分类 / Category | 中文 | English |
+|---|---|---|
+| [记忆](#cat-memory) | 按角色和客户端分开记，写入前备份，删错能恢复 | Separate memory, backup and restore |
+| [收发](#cat-messaging) | 任意可接端口的聊天软件互通，离线先存 | Any chat app with a port, offline queue |
+| [AI 接入](#cat-ai) | 读写记忆、识别模型、绑定后提供本地接口 | Memory tools, model detection and binding |
+| [支付](#cat-payment) | 按国家显示货币和方式，也能手动选 | Country-aware currency and methods |
+| [本机运行](#cat-local) | 自动端口、数据目录、端数和容量 | Auto port, local data, capacity |
+| [边界](#cat-boundary) | 不统计、可停用、跟随语言 | No stats, disable, language |
+
 ## 它不做什么
 
 - 不自带聊天机器人、桌宠或聊天客户端；
@@ -53,6 +66,7 @@ config:
 ```
 
 实际能存多少只受安装者本机磁盘限制。
+<a id="cat-boundary"></a>
 ## 隐私与同意
 
 这个插件默认：
@@ -78,6 +92,7 @@ GET /privacy
 
 返回 `telemetry: false`、`collectsData: false`、`consentRequired: true`，以及是否已同意。
 
+<a id="cat-local"></a>
 ## 安装即用，停用无感
 
 装好后无需额外配置：
@@ -130,6 +145,7 @@ dsh plugin --profile <你的 profile> add <这个包的路径或 npm 包名>
     file: ""   # 默认 ~/.dsh/memory-hub.json
 ```
 
+<a id="cat-memory"></a>
 ## HTTP API
 
 所有请求/响应均为 JSON，已开启 CORS。
@@ -195,6 +211,7 @@ POST /memory/restore
 
 不带 `snapshotAt` 时恢复最近一份快照；带 `snapshotAt` 可恢复指定快照。
 
+<a id="cat-messaging"></a>
 ## 跨端收件箱（Inbox）
 
 任意一端把消息写进收件箱，其他端轮询取走。适合「QQ 让角色在鲸聊里回复」这类跨端投递。
@@ -336,6 +353,7 @@ POST /memory/flush
 ```
 
 **默认 `flush: []`，不会自动处理任何来源，也不含任何外部数据。**
+<a id="cat-payment"></a>
 ## 支付配置（可选）
 
 插件只保存支付入口配置，不处理支付凭证。
@@ -403,6 +421,7 @@ POST /payment/region
 
 如果该方法在当地不可用，会返回 400，不会生成错误入口。
 
+<a id="cat-ai"></a>
 ## 模型自动写入（Tools）
 
 安装者自己的模型可以直接调用这些工具，把数据写进**安装者本机**的记忆中枢：

@@ -2,6 +2,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawn, execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { parseInstruction } from './settings-parse.mjs';
 import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
 import { resolveRegion, REGIONS } from './regions.mjs';
@@ -377,6 +379,17 @@ export function apply(ctx, config = {}) {
 
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     const locale = detectLocale(req.headers['accept-language'], config.language);
+    if (req.method === 'GET' && url.pathname === '/splash') {
+      try {
+        const page = path.join(path.dirname(fileURLToPath(import.meta.url)), 'splash.html');
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+        res.end(fs.readFileSync(page, 'utf8'));
+      } catch {
+        json(res, 404, { ok: false, error: 'splash not found' });
+      }
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/locale') {
       json(res, 200, { ok: true, locale, supported: SUPPORTED, text: t(locale, 'language') });
       return;
@@ -1012,7 +1025,37 @@ export function apply(ctx, config = {}) {
     }
     if (ctx.logger?.warn) ctx.logger.warn(`memory-hub 启动失败：${err.message}`);
   });
+  const showSplash = () => {
+    if (config.splash === false || process.platform !== 'win32') return;
+    try {
+      const here = path.dirname(fileURLToPath(import.meta.url));
+      const page = path.join(here, 'splash.html');
+      if (!fs.existsSync(page)) return;
+      const candidates = [
+        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+      ];
+      const edge = candidates.find((p) => fs.existsSync(p));
+      if (!edge) return;
+      const url = `file:///${page.replace(/\\/g, '/')}`;
+      const profile = path.join(os.tmpdir(), 'worldlink-splash');
+      const child = spawn(edge, [
+        `--app=${url}`,
+        '--window-size=780,500',
+        '--window-position=570,290',
+        `--user-data-dir=${profile}`,
+        '--no-first-run',
+        '--disable-features=Translate',
+      ], { detached: true, stdio: 'ignore' });
+      child.unref();
+      setTimeout(() => {
+        try { execFile('taskkill', ['/PID', String(child.pid), '/T', '/F']); } catch { /* ignore */ }
+      }, 2400);
+    } catch { /* splash must never block the plugin */ }
+  };
+
   server.listen(port, host);
+  showSplash();
 
   if (ctx.effect) {
     ctx.effect(() => () => {

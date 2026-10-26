@@ -43,6 +43,8 @@
           region: ''
           regions: {}
         # Tools let the installer's own model write/read its own local memory.
+        # auto = follow system / Accept-Language; or zh, en, es, fr, de, ja, ko, pt, ru, ar
+        language: auto
         tools: true
         defaultCharacter: default
         defaultSource: model

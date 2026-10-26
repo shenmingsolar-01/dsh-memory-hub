@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { renderSettingsPage, parseInstruction } from './settings-page.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -25,13 +26,22 @@ function emptyStore() {
 }
 
 export function apply(ctx, config = {}) {
+  const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
   const host = String(config.host || '127.0.0.1');
   const port = Number(config.port || 3177);
   const snapshotRaw = Number(config.snapshotLimit ?? 100);
   const snapshotLimit = Number.isFinite(snapshotRaw) && snapshotRaw > 0 ? Math.min(5000, snapshotRaw) : 0;
+  const settingsFile = path.join(dshHome, 'memory-hub-settings.json');
+  const loadSettingsFile = () => {
+    try { return JSON.parse(fs.readFileSync(settingsFile, 'utf8')); } catch { return {}; }
+  };
+  const saveSettingsFile = (value) => {
+    fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
+    fs.writeFileSync(settingsFile, JSON.stringify(value, null, 2), 'utf8');
+  };
+  const savedSettings = loadSettingsFile();
   const historyRaw = Number(config.historyLimit ?? 1000);
   const historyLimit = Number.isFinite(historyRaw) && historyRaw > 0 ? historyRaw : 0;
-  const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
   const file = config.file
     ? String(config.file)
     : path.join(dshHome, 'memory-hub.json');
@@ -184,7 +194,7 @@ export function apply(ctx, config = {}) {
     return item;
   };
 
-  const configuredModels = Array.isArray(config.models) ? config.models.filter((m) => m && m.baseUrl).map((m) => ({
+  let configuredModels = Array.isArray(config.models) ? config.models.filter((m) => m && m.baseUrl).map((m) => ({
     name: String(m.name || m.baseUrl),
     baseUrl: String(m.baseUrl).replace(/\/+$/, ''),
     apiKeyEnv: String(m.apiKeyEnv || ''),
@@ -301,6 +311,12 @@ export function apply(ctx, config = {}) {
     return { ok: true, added: changed };
   };
 
+  const readJsonBody = (req) => new Promise((resolve) => {
+    let body = '';
+    req.on('data', (c) => { body += c; });
+    req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch { resolve({}); } });
+  });
+
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
@@ -315,6 +331,93 @@ export function apply(ctx, config = {}) {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, { ok: true, name, version: 1, file, port });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/settings') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      res.end(renderSettingsPage());
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/settings.json') {
+      json(res, 200, {
+        ok: true,
+        settings: {
+          defaultCharacter,
+          defaultSource,
+          payment: { checkoutUrl: payment.checkoutUrl, presets: payment.presets, provider: payment.provider },
+          models: configuredModels,
+        },
+      });
+      return;
+    }
+
+    const persistSettings = () => saveSettingsFile({
+      version: 1,
+      updatedAt: Date.now(),
+      defaultCharacter,
+      defaultSource,
+      payment: {
+        enabled: Boolean(payment.checkoutUrl),
+        provider: payment.provider,
+        checkoutUrl: payment.checkoutUrl,
+        currency: payment.currency,
+        presets: payment.presets,
+      },
+      models: configuredModels,
+    });
+
+    if (req.method === 'POST' && url.pathname === '/settings/defaults') {
+      const data = await readJsonBody(req);
+      if (data.character) defaultCharacter = safeName(data.character, defaultCharacter) || defaultCharacter;
+      if (data.source) defaultSource = safeName(data.source, defaultSource) || defaultSource;
+      persistSettings();
+      json(res, 200, { ok: true, defaultCharacter, defaultSource });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/settings/payment') {
+      const data = await readJsonBody(req);
+      if (data.checkoutUrl !== undefined) payment.checkoutUrl = String(data.checkoutUrl || '').trim();
+      if (data.presets !== undefined) {
+        payment.presets = String(data.presets).split(/[,，\s]+/).map((n) => Number(n)).filter((n) => n > 0);
+      }
+      payment.enabled = Boolean(payment.checkoutUrl);
+      persistSettings();
+      json(res, 200, { ok: true, payment: { checkoutUrl: payment.checkoutUrl, presets: payment.presets } });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/models/register') {
+      const data = await readJsonBody(req);
+      const baseUrl = String(data.baseUrl || '').trim().replace(/\/+$/, '');
+      if (!/^https?:\/\//.test(baseUrl)) {
+        json(res, 400, { ok: false, error: 'baseUrl must be http(s)' });
+        return;
+      }
+      const name = String(data.name || baseUrl).trim() || baseUrl;
+      configuredModels = configuredModels.filter((m) => m.name !== name && m.baseUrl !== baseUrl);
+      configuredModels.push({ name, baseUrl, apiKeyEnv: '', protocol: 'openai' });
+      persistSettings();
+      json(res, 200, { ok: true, model: { name, baseUrl } });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/settings/text') {
+      const data = await readJsonBody(req);
+      const parsed = parseInstruction(data.text || '');
+      if (parsed.defaults.defaultCharacter) defaultCharacter = safeName(parsed.defaults.defaultCharacter, defaultCharacter) || defaultCharacter;
+      if (parsed.defaults.defaultSource) defaultSource = safeName(parsed.defaults.defaultSource, defaultSource) || defaultSource;
+      if (parsed.payment.checkoutUrl) payment.checkoutUrl = parsed.payment.checkoutUrl;
+      if (Array.isArray(parsed.payment.presets) && parsed.payment.presets.length) payment.presets = parsed.payment.presets;
+      if (payment.checkoutUrl) payment.enabled = true;
+      for (const m of parsed.models) {
+        configuredModels = configuredModels.filter((x) => x.name !== m.name && x.baseUrl !== m.baseUrl);
+        configuredModels.push({ name: m.name, baseUrl: m.baseUrl, apiKeyEnv: '', protocol: 'openai' });
+      }
+      persistSettings();
+      json(res, 200, { ok: true, applied: parsed.applied });
       return;
     }
 
@@ -515,8 +618,8 @@ export function apply(ctx, config = {}) {
     });
   });
 
-  const defaultCharacter = safeName(config.defaultCharacter, 'default') || 'default';
-  const defaultSource = safeName(config.defaultSource, 'model') || 'model';
+  let defaultCharacter = safeName(savedSettings.defaultCharacter || config.defaultCharacter, 'default') || 'default';
+  let defaultSource = safeName(savedSettings.defaultSource || config.defaultSource, 'model') || 'model';
   const toolsEnabled = config.tools !== false;
 
   if (toolsEnabled && ctx.tools?.register) {
@@ -626,6 +729,13 @@ export function apply(ctx, config = {}) {
           const added = flushSource(args.character || defaultCharacter, args.from || 'offline', args.to || defaultSource);
           return { content: [{ type: 'text', text: JSON.stringify({ ok: true, added }) }] };
         },
+      });
+
+      reg({
+        name: 'memory_hub_settings',
+        description: '返回本机 memory-hub 设置页地址，安装者可自行打开设置。',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+        execute: async () => ({ content: [{ type: 'text', text: JSON.stringify({ url: `http://127.0.0.1:${port}/settings` }) }] }),
       });
 
       reg({

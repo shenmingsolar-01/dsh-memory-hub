@@ -1,0 +1,14 @@
+# Marketplace submission template.
+# Copy to data/plugins/<owner>__<repo>.yml in a fork of awesome-dsh-plugin/awesome-dsh-plugin.
+# Replace OWNER and REPO everywhere; the URL must match the repository exactly.
+url: https://github.com/OWNER/REPO
+name: OWNER/REPO
+category: memory
+description:
+  en: 'Local memory hub for multi-channel DSH characters: per-source isolation, automatic snapshots, delete/restore API, plus inbox/outbox for cross-channel delivery.'
+  zh: '多端 DSH 角色的本地记忆中枢：按来源隔离、自动快照，并提供删除/恢复 API 和可配置的跨端 Inbox/Outbox。'
+# Optional: GitHub-hosted raster icon; omit to fall back to the owner avatar.
+icon: https://raw.githubusercontent.com/OWNER/REPO/main/assets/icon-180.png
+# Optional but recommended: prebuilt tarball hosted on a GitHub Release.
+# Keep the asset filename unversioned so latest/download never rots.
+tarball: https://github.com/OWNER/REPO/releases/latest/download/dsh-memory-hub.tgz

@@ -6,6 +6,8 @@
       name: dsh-memory-hub
       config:
         enabled: true
+        # No telemetry and no outbound collection. Explicit opt-in only.
+        consent: false
         host: 127.0.0.1
         port: 3177
         snapshotLimit: 100

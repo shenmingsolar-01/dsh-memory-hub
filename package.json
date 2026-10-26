@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-hub",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "A local memory helper for AI characters: remembers, sends between clients, connects to your own AI, and offers optional payment. Everything stays on your own computer.",
   "type": "module",
   "main": "index.js",
@@ -23,6 +23,7 @@
     "providers-catalog.json",
     "regions.mjs",
     "i18n.mjs",
+    "splash.html",
     "cordis.patch.yml",
     "README.md",
     "features.json",
@@ -39,5 +40,5 @@
   "engines": {
     "node": ">=20"
   },
-  "displayVersion": "0.1.8.1"
+  "displayVersion": "0.1.9.0"
 }

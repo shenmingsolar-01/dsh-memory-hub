@@ -39,6 +39,9 @@
           checkoutUrl: ''
           currency: CNY
           presets: [10, 20, 50, 100, 300, 500]
+          # Empty = follow the installer's system region (CN, US, EU...).
+          region: ''
+          regions: {}
         # Tools let the installer's own model write/read its own local memory.
         tools: true
         defaultCharacter: default

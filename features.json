@@ -1,29 +1,31 @@
 {
-  "summary": {
-    "en": "Local memory hub for multi-channel DSH characters: isolated per-source memory with snapshots and restore, Inbox/Outbox with per-client targets and offline merge, model-callable memory tools, optional payment intents, all local-only.",
-    "zh": "多端 DSH 角色的本机记忆中枢：按来源隔离记忆与快照恢复，支持分端收件箱/发件箱与离线并回、模型可直接调用的记忆工具、可选支付意图，全部只在本机运行。"
-  },
-  "repoDescription": "多端 DSH 角色的本机记忆中枢：来源隔离、快照恢复、分端收发件箱、离线并回、模型工具、可选支付意图。Local memory hub for multi-channel DSH characters.",
-  "items": {
-    "zh": [
-      "按角色和来源隔离记忆，来源之间互不影响；写入前自动快照，可删除单条或恢复到最近/指定快照",
-      "分端 Inbox/Outbox：按 target 投递，离线消息先存本地、上线再取；/cross 可一次写入并投递",
-      "/memory/flush 把离线来源并回正常来源，自动去重并清空离线来源",
-      "模型工具 memory_hub_*：安装者自己的模型可直接读写本机记忆，无需额外客户端",
-      "可选 payment 配置：金额档位、本地支付意图、带金额的支付地址，不处理支付凭证",
-      "默认只监听 127.0.0.1，数据落在安装者自己的 DSH_HOME；端数、角色数、来源数不设固定上限，容量上限可配 0 表示不限",
-      "默认无遥测、不主动联网、不收集安装者或用户数据；任何收集需显式同意",
-      "支持 enabled: false 或 disabled: true 停用，停用后不启动服务、不注册工具、不影响安装者模型"
-    ],
-    "en": [
-      "Per-character and per-source isolated memory with automatic snapshots, single-record delete and snapshot restore",
-      "Per-client Inbox/Outbox with targets and offline queueing; /cross writes and delivers in one call",
-      "/memory/flush merges an offline source back, dedupes and clears it",
-      "memory_hub_* tools let the installer's own model read/write local memory",
-      "Optional payment config: presets, local payment intents and checkout URL; no payment credentials",
-      "Listens on 127.0.0.1 by default, data under the installer's DSH_HOME; no fixed cap on clients/characters/sources, limits accept 0 for unlimited",
-      "No telemetry, no outbound collection, no installer/user data collection without explicit consent",
-      "Disable with enabled: false or disabled: true; no server, tools or model impact"
-    ]
-  }
+    "summary":  {
+                    "en":  "Local memory hub for multi-channel DSH characters: isolated per-source memory with snapshots and restore, Inbox/Outbox with per-client targets and offline merge, model-callable memory tools, optional payment intents, all local-only.",
+                    "zh":  "多端 DSH 角色的本机记忆中枢：按来源隔离记忆与快照恢复，支持分端收件箱/发件箱与离线并回、模型可直接调用的记忆工具、可选支付意图，全部只在本机运行。"
+                },
+    "repoDescription":  "多端 DSH 角色的本机记忆中枢：来源隔离、快照恢复、分端收发件箱、离线并回、模型工具、可选支付意图。Local memory hub for multi-channel DSH characters.",
+    "items":  {
+                  "zh":  [
+                             "按角色和来源隔离记忆，来源之间互不影响；写入前自动快照，可删除单条或恢复到最近/指定快照",
+                             "分端 Inbox/Outbox：按 target 投递，离线消息先存本地、上线再取；/cross 可一次写入并投递",
+                             "/memory/flush 把离线来源并回正常来源，自动去重并清空离线来源",
+                             "模型工具 memory_hub_*：安装者自己的模型可直接读写本机记忆，无需额外客户端",
+                             "可选 payment 配置：金额档位、本地支付意图、带金额的支付地址，不处理支付凭证",
+                             "默认只监听 127.0.0.1，数据落在安装者自己的 DSH_HOME；端数、角色数、来源数不设固定上限，容量上限可配 0 表示不限",
+                             "默认无遥测、不主动联网、不收集安装者或用户数据；任何收集需显式同意",
+                             "支持 enabled: false 或 disabled: true 停用，停用后不启动服务、不注册工具、不影响安装者模型",
+                             "模型适配：自动探测本机 Ollama/LM Studio/vLLM 等 OpenAI 兼容服务，也可手动登记任意模型端口，不绑定 DeepSeek"
+                         ],
+                  "en":  [
+                             "Per-character and per-source isolated memory with automatic snapshots, single-record delete and snapshot restore",
+                             "Per-client Inbox/Outbox with targets and offline queueing; /cross writes and delivers in one call",
+                             "/memory/flush merges an offline source back, dedupes and clears it",
+                             "memory_hub_* tools let the installer\u0027s own model read/write local memory",
+                             "Optional payment config: presets, local payment intents and checkout URL; no payment credentials",
+                             "Listens on 127.0.0.1 by default, data under the installer\u0027s DSH_HOME; no fixed cap on clients/characters/sources, limits accept 0 for unlimited",
+                             "No telemetry, no outbound collection, no installer/user data collection without explicit consent",
+                             "Disable with enabled: false or disabled: true; no server, tools or model impact",
+                             "Model adapters: auto-detect local Ollama/LM Studio/vLLM and OpenAI-compatible endpoints, or register any model port; not tied to DeepSeek"
+                         ]
+              }
 }

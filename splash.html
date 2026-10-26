@@ -71,6 +71,13 @@ body.still{opacity:1}
 
       <circle cx="150" cy="110" r="86" fill="none" stroke="rgba(85,230,255,.18)" stroke-dasharray="2 7"/>
       <circle cx="150" cy="110" r="72" fill="url(#globe)" stroke="rgba(120,235,255,.55)" stroke-width="1.2"/>
+      <clipPath id="globeClip"><circle cx="150" cy="110" r="70"/></clipPath>
+      <g clip-path="url(#globeClip)" fill="rgba(120,235,255,.16)">
+        <path d="M92 82c12-9 27-6 35 3 7 8 2 17-9 19-13 2-24 8-29 17-6-13-7-30 3-39z"/>
+        <path d="M168 70c14-4 27 2 31 12 4 11-4 18-15 17-12-1-23 2-30 9-4-14 1-34 14-38z"/>
+        <path d="M120 132c10-6 23-2 27 7 4 10-5 21-17 21-11 0-20-7-20-16 0-5 4-9 10-12z"/>
+        <path d="M186 132c9-4 19 1 21 9 2 9-6 17-16 16-9-1-15-8-13-16 1-4 4-7 8-9z"/>
+      </g>
       <g class="globe-spin" stroke="rgba(120,235,255,.24)" fill="none" stroke-width=".8">
         <ellipse cx="150" cy="110" rx="72" ry="26"/>
         <ellipse cx="150" cy="110" rx="72" ry="50"/>

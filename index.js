@@ -10,8 +10,14 @@ const VERSION = 2;
 const MAX_BODY = 5 * 1024 * 1024;
 
 function safeName(value, fallback = '') {
-  const s = String(value || fallback).trim().toLowerCase();
-  return /^[a-z0-9_-]{1,32}$/.test(s) ? s : '';
+  let s = String(value ?? fallback).trim();
+  if (!s) s = String(fallback || '').trim();
+  if (!s) return '';
+  if (['__proto__', 'constructor', 'prototype'].includes(s)) s = `_${s}`;
+  if (!/^[\p{L}\p{N}_ .-]{1,64}$/u.test(s)) {
+    s = `u_${Buffer.from(s, 'utf8').toString('hex').slice(0, 48)}`;
+  }
+  return s.slice(0, 64);
 }
 
 function emptyStore() {
@@ -21,7 +27,10 @@ function emptyStore() {
 export function apply(ctx, config = {}) {
   const host = String(config.host || '127.0.0.1');
   const port = Number(config.port || 3177);
-  const snapshotLimit = Math.max(5, Math.min(500, Number(config.snapshotLimit || 100)));
+  const snapshotRaw = Number(config.snapshotLimit ?? 100);
+  const snapshotLimit = Number.isFinite(snapshotRaw) && snapshotRaw > 0 ? Math.min(5000, snapshotRaw) : 0;
+  const historyRaw = Number(config.historyLimit ?? 1000);
+  const historyLimit = Number.isFinite(historyRaw) && historyRaw > 0 ? historyRaw : 0;
   const file = config.file
     ? String(config.file)
     : path.join(os.homedir(), '.dsh', 'memory-hub.json');
@@ -38,7 +47,8 @@ export function apply(ctx, config = {}) {
   const paymentsFile = file.replace(/\.json$/i, '') + '-payments.json';
   const paymentLimit = Math.max(10, Math.min(1000, Number(payRaw.historyLimit || 200)));
   const outboxFile = file.replace(/\.json$/i, '') + '-outbox.json';
-  const outboxLimit = Math.max(10, Math.min(1000, Number(config.outboxLimit || 200)));
+  const outboxRaw = Number(config.outboxLimit ?? 200);
+  const outboxLimit = Number.isFinite(outboxRaw) && outboxRaw > 0 ? Math.min(5000, outboxRaw) : 0;
 
   const loadOutbox = () => {
     try {
@@ -51,7 +61,7 @@ export function apply(ctx, config = {}) {
 
   const saveOutbox = (items) => {
     fs.mkdirSync(path.dirname(outboxFile), { recursive: true });
-    fs.writeFileSync(outboxFile, JSON.stringify(items.slice(-outboxLimit), null, 2), 'utf8');
+    fs.writeFileSync(outboxFile, JSON.stringify(outboxLimit > 0 ? items.slice(-outboxLimit) : items, null, 2), 'utf8');
   };
 
   const render = (value, vars) => {
@@ -103,7 +113,8 @@ export function apply(ctx, config = {}) {
   };
 
   const inboxFile = file.replace(/\.json$/i, '') + '-inbox.json';
-  const inboxLimit = Math.max(10, Math.min(1000, Number(config.inboxLimit || 200)));
+  const inboxRaw = Number(config.inboxLimit ?? 200);
+  const inboxLimit = Number.isFinite(inboxRaw) && inboxRaw > 0 ? Math.min(5000, inboxRaw) : 0;
 
   const loadInbox = () => {
     try {
@@ -116,7 +127,7 @@ export function apply(ctx, config = {}) {
 
   const saveInbox = (items) => {
     fs.mkdirSync(path.dirname(inboxFile), { recursive: true });
-    fs.writeFileSync(inboxFile, JSON.stringify(items.slice(-inboxLimit), null, 2), 'utf8');
+    fs.writeFileSync(inboxFile, JSON.stringify(inboxLimit > 0 ? items.slice(-inboxLimit) : items, null, 2), 'utf8');
   };
 
   const pushInbox = (characterName, text, from = 'unknown', role = 'assistant') => {
@@ -177,7 +188,7 @@ export function apply(ctx, config = {}) {
 
   const snapshot = (c) => {
     c.snapshots.push({ at: Date.now(), sources: JSON.parse(JSON.stringify(c.sources)) });
-    if (c.snapshots.length > snapshotLimit) c.snapshots = c.snapshots.slice(-snapshotLimit);
+    if (snapshotLimit > 0 && c.snapshots.length > snapshotLimit) c.snapshots = c.snapshots.slice(-snapshotLimit);
   };
 
   const flushSource = (characterName, fromName = 'offline', toName = 'default') => {
@@ -200,7 +211,7 @@ export function apply(ctx, config = {}) {
       added += 1;
     }
     snapshot(c);
-    target.history = target.history.slice(-1000);
+    if (historyLimit > 0) target.history = target.history.slice(-historyLimit);
     target.updatedAt = Date.now();
     c.sources[fromKey].history = [];
     c.sources[fromKey].updatedAt = Date.now();
@@ -238,7 +249,7 @@ export function apply(ctx, config = {}) {
     }
     if (changed) {
       snapshot(c);
-      src.history = src.history.slice(-1000);
+      if (historyLimit > 0) src.history = src.history.slice(-historyLimit);
       src.updatedAt = Date.now();
       save(store);
     }

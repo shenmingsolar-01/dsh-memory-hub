@@ -31,6 +31,7 @@ function emptyStore() {
 }
 
 export function apply(ctx, config = {}) {
+  if (config.enabled === false) return;
   const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
   const host = String(config.host || '127.0.0.1');
   const configuredPort = config.port === undefined || config.port === null || config.port === 'auto' ? 0 : Number(config.port);

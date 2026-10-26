@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { renderSettingsPage, parseInstruction } from './settings-page.mjs';
+import { parseInstruction } from './settings-parse.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -334,93 +334,6 @@ export function apply(ctx, config = {}) {
       return;
     }
 
-    if (req.method === 'GET' && url.pathname === '/settings') {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-      res.end(renderSettingsPage());
-      return;
-    }
-
-    if (req.method === 'GET' && url.pathname === '/settings.json') {
-      json(res, 200, {
-        ok: true,
-        settings: {
-          defaultCharacter,
-          defaultSource,
-          payment: { checkoutUrl: payment.checkoutUrl, presets: payment.presets, provider: payment.provider },
-          models: configuredModels,
-        },
-      });
-      return;
-    }
-
-    const persistSettings = () => saveSettingsFile({
-      version: 1,
-      updatedAt: Date.now(),
-      defaultCharacter,
-      defaultSource,
-      payment: {
-        enabled: Boolean(payment.checkoutUrl),
-        provider: payment.provider,
-        checkoutUrl: payment.checkoutUrl,
-        currency: payment.currency,
-        presets: payment.presets,
-      },
-      models: configuredModels,
-    });
-
-    if (req.method === 'POST' && url.pathname === '/settings/defaults') {
-      const data = await readJsonBody(req);
-      if (data.character) defaultCharacter = safeName(data.character, defaultCharacter) || defaultCharacter;
-      if (data.source) defaultSource = safeName(data.source, defaultSource) || defaultSource;
-      persistSettings();
-      json(res, 200, { ok: true, defaultCharacter, defaultSource });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/settings/payment') {
-      const data = await readJsonBody(req);
-      if (data.checkoutUrl !== undefined) payment.checkoutUrl = String(data.checkoutUrl || '').trim();
-      if (data.presets !== undefined) {
-        payment.presets = String(data.presets).split(/[,，\s]+/).map((n) => Number(n)).filter((n) => n > 0);
-      }
-      payment.enabled = Boolean(payment.checkoutUrl);
-      persistSettings();
-      json(res, 200, { ok: true, payment: { checkoutUrl: payment.checkoutUrl, presets: payment.presets } });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/models/register') {
-      const data = await readJsonBody(req);
-      const baseUrl = String(data.baseUrl || '').trim().replace(/\/+$/, '');
-      if (!/^https?:\/\//.test(baseUrl)) {
-        json(res, 400, { ok: false, error: 'baseUrl must be http(s)' });
-        return;
-      }
-      const name = String(data.name || baseUrl).trim() || baseUrl;
-      configuredModels = configuredModels.filter((m) => m.name !== name && m.baseUrl !== baseUrl);
-      configuredModels.push({ name, baseUrl, apiKeyEnv: '', protocol: 'openai' });
-      persistSettings();
-      json(res, 200, { ok: true, model: { name, baseUrl } });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/settings/text') {
-      const data = await readJsonBody(req);
-      const parsed = parseInstruction(data.text || '');
-      if (parsed.defaults.defaultCharacter) defaultCharacter = safeName(parsed.defaults.defaultCharacter, defaultCharacter) || defaultCharacter;
-      if (parsed.defaults.defaultSource) defaultSource = safeName(parsed.defaults.defaultSource, defaultSource) || defaultSource;
-      if (parsed.payment.checkoutUrl) payment.checkoutUrl = parsed.payment.checkoutUrl;
-      if (Array.isArray(parsed.payment.presets) && parsed.payment.presets.length) payment.presets = parsed.payment.presets;
-      if (payment.checkoutUrl) payment.enabled = true;
-      for (const m of parsed.models) {
-        configuredModels = configuredModels.filter((x) => x.name !== m.name && x.baseUrl !== m.baseUrl);
-        configuredModels.push({ name: m.name, baseUrl: m.baseUrl, apiKeyEnv: '', protocol: 'openai' });
-      }
-      persistSettings();
-      json(res, 200, { ok: true, applied: parsed.applied });
-      return;
-    }
-
     if (req.method === 'GET' && url.pathname === '/models') {
       const detected = await detectModels();
       json(res, 200, { ok: true, configured: configuredModels, detected });
@@ -620,6 +533,21 @@ export function apply(ctx, config = {}) {
 
   let defaultCharacter = safeName(savedSettings.defaultCharacter || config.defaultCharacter, 'default') || 'default';
   let defaultSource = safeName(savedSettings.defaultSource || config.defaultSource, 'model') || 'model';
+  const persistCurrentSettings = () => saveSettingsFile({
+    version: 1,
+    updatedAt: Date.now(),
+    defaultCharacter,
+    defaultSource,
+    payment: {
+      enabled: Boolean(payment.checkoutUrl),
+      provider: payment.provider,
+      checkoutUrl: payment.checkoutUrl,
+      currency: payment.currency,
+      presets: payment.presets,
+    },
+    models: configuredModels,
+  });
+
   const toolsEnabled = config.tools !== false;
 
   if (toolsEnabled && ctx.tools?.register) {
@@ -732,10 +660,30 @@ export function apply(ctx, config = {}) {
       });
 
       reg({
-        name: 'memory_hub_settings',
-        description: '返回本机 memory-hub 设置页地址，安装者可自行打开设置。',
-        parameters: { type: 'object', properties: {}, additionalProperties: false },
-        execute: async () => ({ content: [{ type: 'text', text: JSON.stringify({ url: `http://127.0.0.1:${port}/settings` }) }] }),
+        name: 'memory_hub_configure',
+        description: '通过自然语言配置本机记忆中枢：默认角色/来源、模型地址、支付地址与金额档位。用户说“把默认角色改成…”时调用；同键覆盖。',
+        parameters: {
+          type: 'object',
+          properties: {
+            instruction: { type: 'string', description: '用户的原话，任意语言' },
+          },
+          required: ['instruction'],
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const parsed = parseInstruction(String(args.instruction || ''));
+          if (parsed.defaults.defaultCharacter) defaultCharacter = safeName(parsed.defaults.defaultCharacter, defaultCharacter) || defaultCharacter;
+          if (parsed.defaults.defaultSource) defaultSource = safeName(parsed.defaults.defaultSource, defaultSource) || defaultSource;
+          if (parsed.payment.checkoutUrl) payment.checkoutUrl = parsed.payment.checkoutUrl;
+          if (Array.isArray(parsed.payment.presets) && parsed.payment.presets.length) payment.presets = parsed.payment.presets;
+          if (payment.checkoutUrl) payment.enabled = true;
+          for (const m of parsed.models) {
+            configuredModels = configuredModels.filter((x) => x.name !== m.name && x.baseUrl !== m.baseUrl);
+            configuredModels.push({ name: m.name, baseUrl: m.baseUrl, apiKeyEnv: '', protocol: 'openai' });
+          }
+          persistCurrentSettings();
+          return { content: [{ type: 'text', text: JSON.stringify({ ok: true, applied: parsed.applied, defaultCharacter, defaultSource }) }] };
+        },
       });
 
       reg({

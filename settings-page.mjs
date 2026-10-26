@@ -29,8 +29,8 @@ pre{white-space:pre-wrap;background:#06141c;border:1px solid #163545;border-radi
 <section>
 <h2>默认写入位置</h2>
 <div class="row">
-<div><label>默认角色 character</label><input id="character" placeholder="default"></div>
-<div><label>默认来源 source</label><input id="source" placeholder="model"></div>
+<div><label>默认角色 character</label><input id="character" placeholder="role-xxxxxx"></div>
+<div><label>默认来源 source</label><input id="source" placeholder="client-xxxxxx"></div>
 </div>
 <div class="row" style="margin-top:10px"><button class="primary" onclick="saveDefaults()">保存默认角色/来源</button></div>
 <div class="status" id="s1"></div>
@@ -41,8 +41,8 @@ pre{white-space:pre-wrap;background:#06141c;border:1px solid #163545;border-radi
 <div class="row"><button onclick="probe()">自动探测本机模型</button></div>
 <pre id="models">未探测</pre>
 <div class="row">
-<div><label>名称</label><input id="mname" placeholder="local-ollama"></div>
-<div><label>地址</label><input id="murl" placeholder="http://127.0.0.1:11434"></div>
+<div><label>名称</label><input id="mname" placeholder="model-xxxxxx"></div>
+<div><label>地址</label><input id="murl" placeholder="https://model-xxxxxx.invalid/v1"></div>
 </div>
 <div class="row" style="margin-top:10px"><button class="primary" onclick="addModel()">添加 / 覆盖模型</button></div>
 <div class="status" id="s2"></div>
@@ -51,7 +51,7 @@ pre{white-space:pre-wrap;background:#06141c;border:1px solid #163545;border-radi
 <section>
 <h2>支付</h2>
 <div class="row">
-<div><label>支付地址 checkoutUrl</label><input id="purl" placeholder="https://..."></div>
+<div><label>支付地址 checkoutUrl</label><input id="purl" placeholder="https://pay-xxxxxx.invalid/checkout"></div>
 <div><label>档位 presets，逗号分隔</label><input id="ppresets" placeholder="10,20,50,100"></div>
 </div>
 <div class="row" style="margin-top:10px"><button class="primary" onclick="savePayment()">保存支付配置</button></div>
@@ -61,9 +61,9 @@ pre{white-space:pre-wrap;background:#06141c;border:1px solid #163545;border-radi
 <section>
 <h2>自由文本指令</h2>
 <div class="hint">每行一个「键=值」，不限语种。同键再次保存会覆盖旧值，不会混入旧内容。</div>
-<textarea id="text" placeholder="默认角色=深深
-默认来源=手机端
-支付地址=https://platform.deepseek.com/top_up
+<textarea id="text" placeholder="默认角色=role-demo
+默认来源=client-demo
+支付地址=https://pay-demo.invalid/checkout
 支付档位=10,20,50
 模型=本地|http://127.0.0.1:11434
 备注=只在本机使用"></textarea>
@@ -99,7 +99,7 @@ async function applyText(){
   $('s4').textContent=r.ok?'已写入：'+(r.applied||[]).join('、'):'失败：'+(r.error||'');
 }
 (async()=>{const r=await api('/settings.json'); if(r.ok){$('character').value=r.settings.defaultCharacter||'';$('source').value=r.settings.defaultSource||'';$('purl').value=r.settings.payment?.checkoutUrl||'';$('ppresets').value=(r.settings.payment?.presets||[]).join(',');}})();
-</script></body></html>`;
+(function(){const rid=()=>Math.random().toString(36).slice(2,8);$("character").placeholder="role-"+rid();$("source").placeholder="client-"+rid();$("mname").placeholder="model-"+rid();$("murl").placeholder="https://model-"+rid()+".invalid/v1";$("purl").placeholder="https://pay-"+rid()+".invalid/checkout";})();</script></body></html>`;
 }
 
 export function parseInstruction(text) {

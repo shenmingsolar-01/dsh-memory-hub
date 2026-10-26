@@ -9,7 +9,8 @@
         # No telemetry and no outbound collection. Explicit opt-in only.
         consent: false
         host: 127.0.0.1
-        port: 3177
+        # 0 = auto-pick a free local port; the chosen port is written to memory-hub.port
+        port: 0
         snapshotLimit: 100
         # 0 = unlimited. The number of characters/sources/clients is not capped.
         historyLimit: 1000

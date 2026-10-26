@@ -56,11 +56,10 @@ export function apply(ctx, config = {}) {
   const payRaw = config.payment && typeof config.payment === 'object' ? config.payment : {};
   const payment = {
     enabled: payRaw.enabled === true,
-    provider: String(payRaw.provider || 'alipay'),
+    provider: String(payRaw.provider || 'auto'),
     checkoutUrl: String(payRaw.checkoutUrl || ''),
-    currency: String(payRaw.currency || 'CNY'),
+    currency: String(payRaw.currency || ''),
     presets: Array.isArray(payRaw.presets) ? payRaw.presets.map((n) => Number(n)).filter((n) => n > 0) : [],
-    successMessage: String(payRaw.successMessage || ''),
   };
   let paymentRegion = String(savedSettings.paymentRegion || payRaw.region || '');
   const paymentsFile = file.replace(/\.json$/i, '') + '-payments.json';
@@ -70,7 +69,6 @@ export function apply(ctx, config = {}) {
     collectsData: false,
     consentRequired: true,
     consent: config.consent === true,
-    localOnly: true,
   };
   const outboxFile = file.replace(/\.json$/i, '') + '-outbox.json';
   const outboxRaw = Number(config.outboxLimit ?? 200);

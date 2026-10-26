@@ -1,41 +1,41 @@
 {
-  "name": "dsh-memory-hub",
-  "version": "0.1.1",
-  "description": "A local memory hub for multi-channel AI characters: separate memories per character and client, automatic backups and restore, message inbox/outbox with offline queueing, model-callable memory tools, ",
-  "type": "module",
-  "main": "index.js",
-  "license": "MIT",
-  "keywords": [
-    "dsh",
-    "dsh-plugin",
-    "cordis-plugin",
-    "memory",
-    "cross-channel",
-    "be-0.2.3",
-    "inbox",
-    "outbox",
-    "ai-companion"
-  ],
-  "files": [
-    "index.js",
-    "settings-parse.mjs",
-    "providers.mjs",
-    "providers-catalog.json",
-    "cordis.patch.yml",
-    "README.md",
-    "features.json",
-    "LICENSE",
-    "PUBLISHING.md",
-    "awesome-entry.yml",
-    "assets/icon-180.png"
-  ],
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    }
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "displayVersion": "0.1.1.5.1"
+    "name":  "dsh-memory-hub",
+    "version":  "0.1.5",
+    "description":  "A local memory hub for multi-channel AI characters: separate memories per character and client, automatic backups and restore, message inbox/outbox with offline queueing, model-callable memory tools, ",
+    "type":  "module",
+    "main":  "index.js",
+    "license":  "MIT",
+    "keywords":  [
+                     "dsh",
+                     "dsh-plugin",
+                     "cordis-plugin",
+                     "memory",
+                     "cross-channel",
+                     "be-0.2.3",
+                     "inbox",
+                     "outbox",
+                     "ai-companion"
+                 ],
+    "files":  [
+                  "index.js",
+                  "settings-parse.mjs",
+                  "providers.mjs",
+                  "providers-catalog.json",
+                  "cordis.patch.yml",
+                  "README.md",
+                  "features.json",
+                  "LICENSE",
+                  "PUBLISHING.md",
+                  "awesome-entry.yml",
+                  "assets/icon-180.png"
+              ],
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           }
+            },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "displayVersion":  "0.1.5"
 }

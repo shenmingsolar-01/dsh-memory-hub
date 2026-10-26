@@ -5,6 +5,7 @@ import path from 'node:path';
 import { parseInstruction } from './settings-parse.mjs';
 import { scanProviders, probeProvider, PROVIDERS } from './providers.mjs';
 import { resolveRegion } from './regions.mjs';
+import { detectLocale, t, SUPPORTED } from './i18n.mjs';
 
 export const name = 'memory-hub';
 export const inject = [];
@@ -374,6 +375,12 @@ export function apply(ctx, config = {}) {
     }
 
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    const locale = detectLocale(req.headers['accept-language'], config.language);
+    if (req.method === 'GET' && url.pathname === '/locale') {
+      json(res, 200, { ok: true, locale, supported: SUPPORTED, text: t(locale, 'language') });
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, { ok: true, name, version: 1, file, port });
       return;
@@ -455,7 +462,7 @@ export function apply(ctx, config = {}) {
 
     if (req.method === 'POST' && url.pathname === '/v1/chat/completions') {
       if (!binding) {
-        json(res, 409, { error: { message: 'no model bound; POST /bind first', type: 'not_bound' } });
+        json(res, 409, { error: { message: t(locale, 'not_bound'), type: 'not_bound' } });
         return;
       }
       if (!['openai', 'ollama'].includes(binding.protocol)) {
@@ -606,11 +613,11 @@ export function apply(ctx, config = {}) {
 
       if (url.pathname === '/payment/intent') {
         if (!payment.enabled || !payment.checkoutUrl) {
-          json(res, 400, { ok: false, error: 'payment is not configured' });
+          json(res, 400, { ok: false, error: t(locale, 'payment_disabled') });
           return;
         }
         const item = pushPaymentIntent(data);
-        if (!item) { json(res, 400, { ok: false, error: 'invalid amount' }); return; }
+        if (!item) { json(res, 400, { ok: false, error: t(locale, 'invalid_amount') }); return; }
         const region = resolveRegion(payRaw);
         const method = String(data.method || region.methods[0]?.id || 'card');
         const url = new URL(payment.checkoutUrl);

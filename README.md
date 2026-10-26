@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`be-0.2.12`
+版本：`be-0.2.13`
 
 多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。
 
@@ -19,6 +19,7 @@
 - /memory/flush 把离线来源并回正常来源，自动去重并清空离线来源；
 - 可选 payment 配置：校验金额档位、生成本地支付意图和带金额的支付地址，不处理支付凭证；
 - 默认只监听 127.0.0.1，数据落在本机 ~/.dsh/memory-hub.json；
+- 模型工具：安装者自己的模型可调用 memory_hub_* 自动读写本机记忆；
 <!-- FEATURES:END -->
 
 ## 它不做什么
@@ -261,6 +262,27 @@ POST /payment/intent
 ```http
 GET /payment/intents
 ```
+## 模型自动写入（Tools）
+
+安装者自己的模型可以直接调用这些工具，把数据写进**安装者本机**的记忆中枢：
+
+- `memory_hub_write`：写入一条或一批消息；
+- `memory_hub_read`：读取指定角色/来源的最近记忆；
+- `memory_hub_delete`：删除某来源的一条记录；
+- `memory_hub_flush`：把离线来源并回正常来源；
+- `memory_hub_payment_intent`：按配置生成支付意图。
+
+配置：
+
+```yaml
+- id: memory-hub
+  config:
+    tools: true
+    defaultCharacter: default
+    defaultSource: model
+```
+
+默认 `tools: true`，但角色和来源都是通用名，不含任何人的数据；模型写入的内容只存在安装者自己的 `~/.dsh/memory-hub.json`。
 ## 数据格式
 
 ```json

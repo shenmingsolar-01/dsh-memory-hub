@@ -7,6 +7,8 @@ const K = {
   apiModel: /接口模型|api模型|api model|modelo de api|modèle api|api-modell|モデル|모델|modelo da api|модель|نموذج/i,
   bind: /绑定接口|绑定这个接口|bind|vincular|lier|binden|バインド|바인딩|привязать|ربط/i,
   checkout: /支付地址|checkout|支付链接|pago|paiement|zahlung|支払い|결제|pagamento|оплата|دفع/i,
+  region: /支付地区|地区|region|país|pays|land|国|地域|지역|região|регион|منطقة/i,
+  method: /付款方式|支付方式|method|método|moyen|zahlungsart|支払方法|결제수단|forma de pagamento|способ|طريقة/i,
   presets: /档位|presets|金额|importe|montant|betrag|金額|금액|valor|сумма|مبلغ/i,
   model: /模型|model|modelo|modèle|modell|モデル|모델|модель|نموذج/i,
   note: /备注|note|nota|remarque|notiz|メモ|메모|observação|заметка|ملاحظة/i,
@@ -47,6 +49,12 @@ export function parseInstruction(text) {
     } else if (K.bind.test(key)) {
       out.bind = /^(是|对|yes|true|1|开|sí|oui|ja|はい|예|sim|да|نعم)$/i.test(value);
       out.applied.push('bind');
+    } else if (K.region.test(key)) {
+      out.payment.region = value;
+      out.applied.push('payment.region');
+    } else if (K.method.test(key)) {
+      out.payment.method = value;
+      out.applied.push('payment.method');
     } else if (K.checkout.test(key)) {
       out.payment.checkoutUrl = value;
       out.applied.push('payment.url');

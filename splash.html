@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>世界通 · WORLD LINK</title>
+<style>
+:root{--cyan:#55e6ff;--deep:#04121d;--line:rgba(85,230,255,.28)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#02080f;overflow:hidden}
+body{display:grid;place-items:center;font-family:"Bahnschrift","Segoe UI Variable","Microsoft YaHei UI",sans-serif;color:#e8fbff}
+.stage{position:relative;width:760px;height:460px;border-radius:18px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,#0a2436 0%,#04121d 55%,#02080f 100%);
+  border:1px solid rgba(85,230,255,.18);
+  box-shadow:0 0 60px rgba(30,180,220,.18),inset 0 0 80px rgba(20,120,160,.08)}
+.grid{position:absolute;inset:0;opacity:.35;background-image:
+  linear-gradient(var(--line) 1px,transparent 1px),
+  linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:38px 38px;
+  mask-image:radial-gradient(70% 70% at 50% 35%,#000 20%,transparent 100%)}
+.scan{position:absolute;inset:0;background:linear-gradient(180deg,transparent 0%,rgba(85,230,255,.05) 50%,transparent 100%);
+  background-size:100% 8px;animation:scan 2s linear infinite;opacity:.5}
+@keyframes scan{from{background-position:0 0}to{background-position:0 80px}}
+.orbit-wrap{position:absolute;left:50%;top:44px;width:300px;height:220px;transform:translateX(-50%)}
+svg{width:100%;height:100%;overflow:visible}
+.globe-spin{transform-origin:150px 110px;animation:globeSpin 6s linear infinite}
+@keyframes globeSpin{to{transform:rotate(360deg)}}
+.whale-orbit{transform-origin:150px 110px;animation:whaleOrbit 2.4s linear infinite}
+@keyframes whaleOrbit{to{transform:rotate(360deg)}}
+.whale{filter:drop-shadow(0 0 6px rgba(85,230,255,.65))}
+.pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+.copy{position:absolute;left:0;right:0;top:250px;text-align:center;padding:0 30px}
+h1{margin:0;font-size:44px;line-height:1.05;letter-spacing:.22em;font-weight:700;
+  text-shadow:0 0 24px rgba(85,230,255,.45);animation:rise .7s cubic-bezier(.2,.9,.2,1) both}
+h1 span{display:block;font-size:13px;letter-spacing:.55em;color:#8fe9ff;margin-top:9px;font-weight:500;animation:rise .7s .08s both}
+p{margin:20px 0 0;font-size:15px;line-height:1.8;letter-spacing:.14em;color:#bfefff;animation:rise .7s .16s both}
+p em{display:block;font-style:normal;font-size:11.5px;letter-spacing:.2em;color:#6fc7dd;margin-top:4px}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.foot{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:9px;letter-spacing:.4em;color:#3f7f93}
+.fade{animation:fade 2s ease both}
+@keyframes fade{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}
+body.still *{animation-play-state:paused!important}
+body.still .fade{animation:none;opacity:1}
+body.still h1,body.still h1 span,body.still p,body.still p em{animation:none;opacity:1;transform:none}
+body.still .whale-orbit{animation:none;transform:rotate(38deg)}
+body.still .globe-spin{animation:none}
+body.still{opacity:1}
+</style>
+</head>
+<body>
+<div class="stage fade">
+  <div class="grid"></div>
+  <div class="scan"></div>
+
+  <div class="orbit-wrap">
+    <svg viewBox="0 0 300 220" aria-hidden="true">
+      <defs>
+        <radialGradient id="globe" cx="38%" cy="34%" r="72%">
+          <stop offset="0%" stop-color="#1d5f7d"/>
+          <stop offset="55%" stop-color="#0b2d40"/>
+          <stop offset="100%" stop-color="#041824"/>
+        </radialGradient>
+        <linearGradient id="whaleBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#b8f6ff"/>
+          <stop offset="55%" stop-color="#55e6ff"/>
+          <stop offset="100%" stop-color="#1b90b8"/>
+        </linearGradient>
+        <filter id="soft"><feGaussianBlur stdDeviation="1.1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <circle cx="150" cy="110" r="86" fill="none" stroke="rgba(85,230,255,.18)" stroke-dasharray="2 7"/>
+      <circle cx="150" cy="110" r="72" fill="url(#globe)" stroke="rgba(120,235,255,.55)" stroke-width="1.2"/>
+      <g class="globe-spin" stroke="rgba(120,235,255,.24)" fill="none" stroke-width=".8">
+        <ellipse cx="150" cy="110" rx="72" ry="26"/>
+        <ellipse cx="150" cy="110" rx="72" ry="50"/>
+        <ellipse cx="150" cy="110" rx="30" ry="72"/>
+        <ellipse cx="150" cy="110" rx="58" ry="72"/>
+        <path d="M78 110h144M86 84h128M86 136h128"/>
+      </g>
+      <circle cx="150" cy="110" r="72" fill="none" stroke="rgba(150,245,255,.45)" stroke-width="1" filter="url(#soft)"/>
+
+      <g class="whale-orbit">
+        <g class="whale" transform="translate(150 28)">
+          <path d="M-22 4c7-10 20-13 31-8 7 3 11 8 11 8s-4 5-11 8c-11 5-24 2-31-8z" fill="url(#whaleBody)"/>
+          <path d="M20 4c7-1 12-4 16-8-1 6-1 11 0 16-4-4-9-7-16-8z" fill="url(#whaleBody)" opacity=".9"/>
+          <path d="M-6 0c4-5 10-5 13-1-4 4-9 5-13 1z" fill="#eaffff" opacity=".85"/>
+          <circle cx="-12" cy="3" r="1.5" fill="#04303f"/>
+          <path d="M-2 -1c2 3 2 7 0 10" stroke="#0a4a60" stroke-width=".8" fill="none" opacity=".6"/>
+        </g>
+      </g>
+
+      <g fill="#9fefff" class="pulse">
+        <circle cx="52" cy="172" r="1.2"/><circle cx="248" cy="58" r="1"/><circle cx="238" cy="178" r="1.3"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="copy">
+    <h1>世界通<span>WORLD LINK</span></h1>
+    <p>致力于全球 AI 通信<em>Dedicated to global AI communication</em></p>
+  </div>
+  <div class="foot">MEMORY · CONNECT · EVERYWHERE</div>
+</div>
+<script>
+const q = new URLSearchParams(location.search);
+if (q.get('still') === '1') document.body.classList.add('still');
+</script>
+</body>
+</html>

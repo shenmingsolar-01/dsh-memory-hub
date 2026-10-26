@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`1.1.10.2`
+版本：`1.1.10.3`
 
 多端 AI 角色的本机记忆助手：记得住、能收发、能接自己的 AI、可选支付，数据只留在自己电脑上。
 
@@ -173,8 +173,8 @@ POST /cross
 
 ```http
 GET /memory
-GET /memory?character=shenshen
-GET /memory/backups?character=shenshen
+GET /memory?character=assistant
+GET /memory/backups?character=assistant
 ```
 
 ### 写入
@@ -182,11 +182,11 @@ GET /memory/backups?character=shenshen
 ```http
 POST /memory
 {
-  "character": "shenshen",
+  "character": "assistant",
   "source": "mobile",
   "history": [
     { "role": "user", "text": "在吗" },
-    { "role": "assistant", "text": "在的，老爹" }
+    { "role": "assistant", "text": "在的，你好" }
   ]
 }
 ```
@@ -197,7 +197,7 @@ POST /memory
 
 ```http
 POST /memory/delete
-{ "character": "shenshen", "source": "mobile", "text": "要删掉的那句" }
+{ "character": "assistant", "source": "mobile", "text": "要删掉的那句" }
 ```
 
 也可以用 `"at": 时间戳` 精确定位。
@@ -206,7 +206,7 @@ POST /memory/delete
 
 ```http
 POST /memory/restore
-{ "character": "shenshen", "source": "mobile" }
+{ "character": "assistant", "source": "mobile" }
 ```
 
 不带 `snapshotAt` 时恢复最近一份快照；带 `snapshotAt` 可恢复指定快照。
@@ -592,7 +592,7 @@ splash: false
 {
   "version": 2,
   "characters": {
-    "shenshen": {
+    "assistant": {
       "sources": {
         "app": { "history": [], "updatedAt": 0 },
         "pc": { "history": [], "updatedAt": 0 },

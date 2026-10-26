@@ -42,3 +42,6 @@
         tools: true
         defaultCharacter: default
         defaultSource: model
+        # OpenAI-compatible / Ollama endpoints. Empty means auto-detect only.
+        models: []
+        discoverPorts: [11434, 1234, 8000, 8080, 5000]

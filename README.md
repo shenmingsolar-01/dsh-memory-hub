@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`0.1.9.1`
+版本：`0.1.10.0`
 
 多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。
 
@@ -10,7 +10,7 @@
 ## 它做什么
 
 - 记忆：按角色和客户端分开记；写之前自动备份，删错能恢复。；
-- 收发：移动端、电脑端等可接端口的聊天软件能互相发消息；对方不在线就先存着，上线再收；离线记忆能并回。；
+- 收发：任何可接端口的聊天软件都能接入；Slack、Discord、Telegram、飞书、企业微信、LINE、Matrix 自动适配；按地区和语言发送；离线先存、上线再收，离线记忆能并回。；
 - AI：你的 AI 能直接读写记忆；插件自动找本机和常用云端模型；选定后提供本地接口；也能用说话加自己的 API。；
 - 支付：按所在国家显示货币和付款方式，也能手动换国家；只给付款入口，不碰支付密码。；
 - 本机：自动选端口，数据只存自己电脑；能接多少端、存多少条看本机；启动时有 2 秒科技风开场。；
@@ -227,6 +227,37 @@ GET /inbox?character=assistant&since=0
 
 插件本身不内置任何聊天通道。你可以在配置里声明自己的本机 HTTP 通道，然后调用 `/outbox` 把消息投递过去。
 
+任何能接 HTTP 端口的聊天软件都能接入；常见软件不用自己拼报文：
+
+| type | 适用 |
+|---|---|
+| `slack` | Slack Incoming Webhook |
+| `discord` | Discord Webhook |
+| `telegram` | Telegram Bot API |
+| `feishu` / `lark` | 飞书群机器人 |
+| `wecom` | 企业微信机器人 |
+| `line` | LINE Messaging API |
+| `matrix` | Matrix 客户端 API |
+| `generic` | 任意自定义 HTTP 接口，默认 |
+
+```yaml
+channels:
+  team-slack:
+    type: slack
+    url: https://hooks.slack.com/services/...
+  chat-telegram:
+    type: telegram
+    url: https://api.telegram.org/bot<TOKEN>/sendMessage
+    chatId: '123456'
+  local-app:
+    type: generic
+    url: http://127.0.0.1:9000/message
+    body:
+      text: '{{text}}'
+```
+
+`GET /channels` 可以查看已配置通道和可用适配器。
+
 ### 配置示例（你自己的 profile，不在本包内）
 
 ```yaml
@@ -241,7 +272,7 @@ GET /inbox?character=assistant&since=0
           text: '{{text}}'
 ```
 
-`{{text}}`、`{{character}}`、`{{channel}}` 会被替换。
+`{{text}}`、`{{character}}`、`{{channel}}`、`{{locale}}` 会被替换。
 
 ### 发送
 

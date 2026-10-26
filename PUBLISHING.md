@@ -36,7 +36,7 @@ dsh-plugin
 
 ## 4. 发 Release
 
-- Tag：`be-0.2.18`
+- Tag：`be-0.2.19`
 - 附件：根目录的 `dsh-memory-hub.tgz`（文件名不要带版本号）
 - Release 地址应能访问：
 

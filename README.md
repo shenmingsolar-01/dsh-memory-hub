@@ -1,6 +1,6 @@
 # dsh-memory-hub
 
-版本：`be-0.4.1`
+版本：`be-0.4.2`
 
 多端 DSH 角色的本机记忆中枢：按来源隔离记忆、自动快照与恢复，支持分端收件箱/发件箱、离线来源并回，以及可选的支付意图配置。
 
@@ -238,7 +238,7 @@ GET /inbox?character=assistant&since=0
   config:
     channels:
       qq:
-        url: http://127.0.0.1:3100/act
+        url: https://channel.example.invalid/hook
         body:
           who: your-character
           action: message

@@ -33,3 +33,7 @@
           checkoutUrl: ''
           currency: CNY
           presets: [10, 20, 50, 100, 300, 500]
+        # Tools let the installer's own model write/read its own local memory.
+        tools: true
+        defaultCharacter: default
+        defaultSource: model

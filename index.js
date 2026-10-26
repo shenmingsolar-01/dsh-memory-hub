@@ -42,6 +42,7 @@ export function apply(ctx, config = {}) {
     fs.writeFileSync(settingsFile, JSON.stringify(value, null, 2), 'utf8');
   };
   const savedSettings = loadSettingsFile();
+  let binding = savedSettings.binding && savedSettings.binding.baseUrl ? savedSettings.binding : null;
   const historyRaw = Number(config.historyLimit ?? 1000);
   const historyLimit = Number.isFinite(historyRaw) && historyRaw > 0 ? historyRaw : 0;
   const file = config.file
@@ -377,6 +378,112 @@ export function apply(ctx, config = {}) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/bind') {
+      json(res, 200, { ok: true, binding });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/bind') {
+      const data = await readJsonBody(req);
+      let baseUrl = String(data.baseUrl || '').trim().replace(/\/+$/, '');
+      let protocol = String(data.protocol || 'openai');
+      let apiKeyEnv = String(data.apiKeyEnv || '');
+      let name = String(data.name || '');
+      let providerId = String(data.providerId || '');
+
+      if (providerId === 'auto' || (!baseUrl && providerId)) {
+        if (providerId === 'auto') {
+          const local = await detectModels();
+          if (!local.length) {
+            json(res, 404, { ok: false, error: 'no local model service detected' });
+            return;
+          }
+          baseUrl = local[0].baseUrl;
+          protocol = local[0].protocol;
+          name = local[0].baseUrl;
+          providerId = 'auto';
+        } else {
+          const p = PROVIDERS.find((x) => x.id === providerId);
+          if (!p) {
+            json(res, 404, { ok: false, error: 'unknown providerId' });
+            return;
+          }
+          baseUrl = p.baseUrl;
+          protocol = p.protocol;
+          apiKeyEnv = p.apiKeyEnv || '';
+          name = p.name;
+        }
+      }
+
+      if (!/^https?:\/\//.test(baseUrl)) {
+        json(res, 400, { ok: false, error: 'baseUrl must be http(s)' });
+        return;
+      }
+
+      const probe = await probeModel(baseUrl, apiKeyEnv);
+      if (!probe.ok && data.force !== true) {
+        json(res, 400, { ok: false, error: 'model endpoint not reachable; pass force:true to bind anyway' });
+        return;
+      }
+
+      binding = {
+        providerId: providerId || 'custom',
+        name: name || baseUrl,
+        baseUrl,
+        protocol,
+        apiKeyEnv,
+        model: String(data.model || ''),
+        boundAt: Date.now(),
+      };
+      const settings = loadSettingsFile();
+      settings.binding = binding;
+      settings.updatedAt = Date.now();
+      saveSettingsFile(settings);
+      json(res, 200, { ok: true, binding });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/v1/models') {
+      const models = binding ? (PROVIDERS.find((p) => p.id === binding.providerId)?.models || []) : [];
+      json(res, 200, {
+        object: 'list',
+        data: models.map((id) => ({ id, object: 'model', owned_by: binding?.providerId || 'memory-hub' })),
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/v1/chat/completions') {
+      if (!binding) {
+        json(res, 409, { error: { message: 'no model bound; POST /bind first', type: 'not_bound' } });
+        return;
+      }
+      if (!['openai', 'ollama'].includes(binding.protocol)) {
+        json(res, 501, { error: { message: `protocol ${binding.protocol} needs its native client; use an OpenAI-compatible endpoint`, type: 'unsupported_protocol' } });
+        return;
+      }
+      const data = await readJsonBody(req);
+      if (!data.model && binding.model) data.model = binding.model;
+      const base = binding.baseUrl.replace(/\/+$/, '');
+      const target = /\/v1$/.test(base) ? `${base}/chat/completions` : `${base}/v1/chat/completions`;
+      const headers = { 'content-type': 'application/json' };
+      const key = binding.apiKeyEnv ? process.env[binding.apiKeyEnv] : '';
+      if (key) headers.authorization = `Bearer ${key}`;
+      try {
+        const upstream = await fetch(target, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data),
+          signal: AbortSignal.timeout(120000),
+        });
+        const text = await upstream.text();
+        res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') || 'application/json; charset=utf-8' });
+        res.end(text);
+      } catch (err) {
+        json(res, 502, { error: { message: String(err?.message ?? err), type: 'upstream_error' } });
+      }
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/models') {
       const catalog = await refreshCatalog(false);
       const detected = await detectModels();
@@ -707,6 +814,28 @@ export function apply(ctx, config = {}) {
         execute: async (args = {}) => {
           const added = flushSource(args.character || defaultCharacter, args.from || 'offline', args.to || defaultSource);
           return { content: [{ type: 'text', text: JSON.stringify({ ok: true, added }) }] };
+        },
+      });
+
+      reg({
+        name: 'memory_hub_bind',
+        description: '把本插件的 OpenAI 兼容 API 绑定到安装者指定的 AI 软件或模型端点。',
+        parameters: {
+          type: 'object',
+          properties: {
+            providerId: { type: 'string', description: '厂商 id，如 ollama、openai、deepseek；auto 表示自动选本机服务' },
+            baseUrl: { type: 'string', description: '自定义 OpenAI 兼容地址' },
+            model: { type: 'string', description: '默认模型名，可留空' },
+          },
+          additionalProperties: false,
+        },
+        execute: async (args = {}) => {
+          const r = await fetch(`http://127.0.0.1:${port}/bind`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ providerId: args.providerId || 'auto', baseUrl: args.baseUrl || '', model: args.model || '' }),
+          });
+          return { content: [{ type: 'text', text: JSON.stringify(await r.json().catch(() => ({}))) }] };
         },
       });
 

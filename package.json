@@ -35,6 +35,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "requirements": {
+      "node": ">=20",
+      "dsh": ">=0.2.0",
+      "dataDir": "writable DSH_HOME, >= 50 MB free",
+      "network": "optional: only for bound cloud models and payment links",
+      "browser": "optional: Edge/Chrome/Brave for the startup splash"
     }
   },
   "engines": {

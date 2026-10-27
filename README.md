@@ -124,13 +124,68 @@ GET /privacy
 - 不读写记忆文件；
 - 不影响安装者自己的模型运行。
 
+## 安装前需要满足
+
+| 条件 | 要求 | 不满足时 |
+| --- | --- | --- |
+| Node.js | **20 或更高**（DSH 自带运行时通常已满足） | 插件不启动，日志提示 Node 版本过低 |
+| DSH | **0.2.0 或更高**，支持 `dsh plugin add` | 无法安装或注册插件 |
+| 系统 | Windows 10/11、macOS 12+、主流 Linux，x64 或 arm64 | 未验证的平台可能可用，但不在支持范围 |
+| 数据目录 | `DSH_HOME`（默认 `~/.dsh`）可写，至少 50 MB 空闲 | 启动时报 `data-dir` / `disk` 检查失败 |
+| 本机端口 | 一个空闲的本地 HTTP 端口，默认 `127.0.0.1` 自动分配 | 端口被占用时自动换端口；只监听回环地址 |
+| 浏览器（可选） | Edge、Chrome 或 Brave 任一 | 只影响启动画面，记忆、收发、AI、支付都不受影响 |
+| AI 服务（可选） | 本机 Ollama/LM Studio/vLLM，或安装者自己的云端 Key | `/bind` 不可用；不配置也能正常记忆和收发 |
+| 支付链接（可选） | 安装者自己的充值/收银台地址 | `/payment` 只返回未配置，不影响其他功能 |
+
+不需要 `npm install`、不需要编译原生模块、不需要数据库。插件没有第三方运行时依赖，装完即可用。
+
 ## 安装
 
 ```bash
 dsh plugin --profile <你的 profile> add <这个包的路径或 npm 包名>
 ```
 
-重启该 profile 后生效。
+例如从 npm 安装：
+
+```bash
+dsh plugin --profile default add dsh-memory-hub
+```
+
+从本地压缩包安装：
+
+```bash
+dsh plugin --profile default add ./dsh-memory-hub.tgz
+```
+
+重启该 profile 后生效。启动日志会打印实际监听地址，例如 `memory-hub 监听 http://127.0.0.1:43127`。
+
+### 安装自检
+
+启动后访问：
+
+```http
+GET http://127.0.0.1:<端口>/requirements
+```
+
+返回每一项条件是否满足：
+
+```json
+{
+  "ok": true,
+  "node": "24.21.0",
+  "platform": "win32-x64",
+  "dshHome": "C:\\Users\\you\\.dsh",
+  "checks": [
+    { "id": "node", "required": true, "ok": true, "detail": "Node 24.21.0，需要 >= 20" },
+    { "id": "data-dir", "required": true, "ok": true, "detail": "可写：..." },
+    { "id": "disk", "required": true, "ok": true, "detail": "剩余 12345 MB，建议 >= 50 MB" },
+    { "id": "tools-api", "required": false, "ok": true, "detail": "支持注册 memory_hub_* 工具" },
+    { "id": "browser", "required": false, "ok": true, "detail": "启动画面可用：..." }
+  ]
+}
+```
+
+`GET /health` 也会带上同样的 `requirements` 字段。`required: false` 的项不满足时，对应可选功能跳过，插件仍可正常使用。
 
 ## 配置
 

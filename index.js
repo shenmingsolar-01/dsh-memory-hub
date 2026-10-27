@@ -30,6 +30,74 @@ function emptyStore() {
   return { version: VERSION, characters: {}, updatedAt: Date.now() };
 }
 
+function findBrowser() {
+  const candidates = [];
+  if (process.platform === 'win32') {
+    const roots = [process.env['PROGRAMFILES(X86)'], process.env.PROGRAMFILES, process.env.LOCALAPPDATA].filter(Boolean);
+    for (const root of roots) {
+      candidates.push(
+        path.join(root, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+        path.join(root, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(root, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'),
+      );
+    }
+  } else if (process.platform === 'darwin') {
+    candidates.push(
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+    );
+  } else {
+    for (const cmd of ['google-chrome', 'chromium', 'chromium-browser', 'brave-browser', 'microsoft-edge']) {
+      try {
+        const found = execFileSync('which', [cmd], { encoding: 'utf8' }).trim();
+        if (found) candidates.push(found);
+      } catch { /* not installed */ }
+    }
+  }
+  return candidates.find((p) => { try { return fs.statSync(p).isFile(); } catch { return false; } }) || '';
+}
+
+function checkEnvironment(dshHome, ctx) {
+  const checks = [];
+  const major = Number(String(process.versions.node).split('.')[0]);
+  checks.push({ id: 'node', required: true, ok: major >= 20, detail: `Node ${process.versions.node}，需要 >= 20` });
+
+  let writable = false;
+  let writeError = '';
+  try {
+    fs.mkdirSync(dshHome, { recursive: true });
+    const probe = path.join(dshHome, `.memory-hub-write-${process.pid}`);
+    fs.writeFileSync(probe, 'ok');
+    fs.unlinkSync(probe);
+    writable = true;
+  } catch (err) {
+    writeError = String(err?.message ?? err);
+  }
+  checks.push({ id: 'data-dir', required: true, ok: writable, detail: writable ? `可写：${dshHome}` : `不可写：${dshHome}（${writeError}）` });
+
+  let freeMB = null;
+  try {
+    const st = fs.statfsSync(dshHome);
+    freeMB = Math.round((st.bavail * st.bsize) / 1048576);
+  } catch { /* unknown */ }
+  checks.push({ id: 'disk', required: true, ok: freeMB === null || freeMB >= 50, detail: freeMB === null ? '磁盘空间未知' : `剩余 ${freeMB} MB，建议 >= 50 MB` });
+
+  checks.push({ id: 'tools-api', required: false, ok: Boolean(ctx?.tools?.register), detail: ctx?.tools?.register ? '支持注册 memory_hub_* 工具' : '宿主未暴露 tools API；HTTP 接口仍可用' });
+
+  const browser = findBrowser();
+  checks.push({ id: 'browser', required: false, ok: Boolean(browser), detail: browser ? `启动画面可用：${browser}` : '未找到 Edge/Chrome/Brave；启动画面会跳过，不影响记忆功能' });
+
+  return {
+    ok: checks.filter((c) => c.required).every((c) => c.ok),
+    node: process.versions.node,
+    platform: `${process.platform}-${process.arch}`,
+    dshHome,
+    browser,
+    checks,
+  };
+}
+
 export function apply(ctx, config = {}) {
   if (config.enabled === false) return;
   const dshHome = process.env.DSH_HOME || path.join(os.homedir(), '.dsh');
@@ -74,6 +142,11 @@ export function apply(ctx, config = {}) {
   const outboxFile = file.replace(/\.json$/i, '') + '-outbox.json';
   const outboxRaw = Number(config.outboxLimit ?? 200);
   const outboxLimit = Number.isFinite(outboxRaw) && outboxRaw > 0 ? Math.min(5000, outboxRaw) : 0;
+  const environment = checkEnvironment(dshHome, ctx);
+  if (!environment.ok && ctx.logger?.warn) {
+    const failed = environment.checks.filter((c) => c.required && !c.ok).map((c) => `${c.id}: ${c.detail}`);
+    ctx.logger.warn(`memory-hub 安装条件未满足：${failed.join('；')}`);
+  }
 
   const loadOutbox = () => {
     try {
@@ -406,7 +479,12 @@ export function apply(ctx, config = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
-      json(res, 200, { ok: true, name, version: 1, file, port });
+      json(res, 200, { ok: environment.ok, name, version: 1, file, port, requirements: environment });
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/requirements') {
+      json(res, 200, { ok: environment.ok, ...environment });
       return;
     }
 
@@ -818,11 +896,12 @@ export function apply(ctx, config = {}) {
 
   const toolsEnabled = config.tools !== false;
 
-  if (toolsEnabled && ctx.tools?.register) {
+  const toolsService = typeof ctx.get === 'function' ? ctx.get('tools') : undefined;
+  if (toolsEnabled && toolsService?.register) {
     ctx.effect(() => {
       const disposers = [];
       const reg = (definition) => {
-        try { disposers.push(ctx.tools.register(definition)); } catch { /* ignore */ }
+        try { disposers.push(toolsService.register(definition)); } catch { /* ignore */ }
       };
 
       reg({
